@@ -8,7 +8,7 @@ from .models import Question, Choice
 class QuestionForm(forms.ModelForm):
     class Meta:
         model = Question
-        fields = ['html', 'is_published']
+        fields = ['html', 'is_published', 'is_multiple_choice']
         widgets = {
             'html': forms.Textarea(attrs={'rows': 3, 'cols': 80}),
         }
@@ -27,18 +27,30 @@ class ChoiceInlineFormset(forms.BaseInlineFormSet):
     def clean(self):
         super(ChoiceInlineFormset, self).clean()
 
-        correct_choices_count = 0
-        for form in self.forms:
-            if not form.is_valid():
-                return
+        # Ha nincs még Question példány, nem validálunk
+        if not hasattr(self, "instance"):
+            return
 
-            if form.cleaned_data and form.cleaned_data.get('is_correct') is True:
+        question = self.instance
+        correct_choices_count = 0
+
+        for form in self.forms:
+            # csak érvényes, nem törölt sorokat nézünk
+            if not form.is_valid() or form.cleaned_data.get('DELETE', False):
+                continue
+            if form.cleaned_data.get('is_correct', False):
                 correct_choices_count += 1
 
-        try:
-            assert correct_choices_count == Question.ALLOWED_NUMBER_OF_CORRECT_CHOICES
-        except AssertionError:
-            raise forms.ValidationError(_('Exactly one correct choice is allowed.'))
+
+        # 🔹 Validáció logika
+        if not question.is_multiple_choice:
+            # single choice -> pontosan 1 helyes válasz legyen
+            if correct_choices_count != 1:
+                raise forms.ValidationError(_('Egyszeres választású kérdéshez pontosan 1 helyes válasz szükséges.'))
+        else:
+            # multiple choice -> legalább 1 helyes válasz legyen
+            if correct_choices_count < 1:
+                raise forms.ValidationError(_('Többválaszos kérdéshez legalább 1 helyes válasz szükséges.'))
 
 
 User = get_user_model()

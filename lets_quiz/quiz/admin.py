@@ -18,7 +18,7 @@ class QuestionAdmin(admin.ModelAdmin):
     model = Question
     inlines = (ChoiceInline, )
     list_display = ['html', 'is_published']
-    list_filter = ['is_published']
+    list_filter = ['is_published', 'is_multiple_choice']
     search_fields = ['html', 'choices__html']
     actions = None
     form = QuestionForm
@@ -33,3 +33,4 @@ class QuestionAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Question, QuestionAdmin)
+

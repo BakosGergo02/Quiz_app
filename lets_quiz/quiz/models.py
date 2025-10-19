@@ -3,7 +3,10 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils.translation import gettext as _
 from model_utils.models import TimeStampedModel
+import logging
+from decimal import Decimal
 
+logger = logging.getLogger(__name__)
 
 class Question(TimeStampedModel):
     ALLOWED_NUMBER_OF_CORRECT_CHOICES = 1
@@ -12,8 +15,10 @@ class Question(TimeStampedModel):
     is_published = models.BooleanField(_('Has been published?'), default=False, null=False)
     maximum_marks = models.DecimalField(_('Maximum Marks'), default=4, decimal_places=2, max_digits=6)
 
+    is_multiple_choice = models.BooleanField(default=False)
+
     def __str__(self):
-        return self.html
+        return self.html[:50]
 
 
 class Choice(TimeStampedModel):
@@ -45,31 +50,74 @@ class QuizProfile(TimeStampedModel):
         attempted_question = AttemptedQuestion(question=question, quiz_profile=self)
         attempted_question.save()
 
-    def evaluate_attempt(self, attempted_question, selected_choice):
-        if attempted_question.question_id != selected_choice.question_id:
-            return
+    def evaluate_attempt(self, attempted_question, selected_choices):
+        """
+        selected_choices: iterable of Choice objects or QuerySet
+        """
+        question = attempted_question.question
 
-        attempted_question.selected_choice = selected_choice
-        if selected_choice.is_correct is True:
-            attempted_question.is_correct = True
-            attempted_question.marks_obtained = attempted_question.question.maximum_marks
+        # Normalize selected_choices to a list
+        try:
+            selected_list = list(selected_choices)
+        except Exception:
+            selected_list = [selected_choices] if selected_choices else []
 
-        attempted_question.save()
+        chosen_ids = set(int(c.pk) for c in selected_list if c is not None)
+        correct_ids = set(question.choices.filter(is_correct=True).values_list('pk', flat=True))
+
+        # --- DEBUG prints ---
+        print("### EVAL DEBUG: Question ID:", question.pk)
+        print("### EVAL DEBUG: Correct IDs:", correct_ids)
+        print("### EVAL DEBUG: Chosen IDs:", chosen_ids)
+
+        # Save selected choices
+        attempted_question.selected_choices.set(selected_list)
+
+        # --- Evaluation logic ---
+        if not question.is_multiple_choice:
+            print("### EVAL DEBUG: SINGLE mode")
+            if len(chosen_ids) == 1 and list(chosen_ids)[0] in correct_ids:
+                attempted_question.is_correct = True
+                attempted_question.marks_obtained = question.maximum_marks
+            else:
+                attempted_question.is_correct = False
+                attempted_question.marks_obtained = 0
+        else:
+            print("### EVAL DEBUG: MULTIPLE mode")
+            correct_selected = len(chosen_ids & correct_ids)
+            incorrect_selected = len(chosen_ids - correct_ids)
+            total_correct = len(correct_ids)
+
+            print(f"### EVAL DEBUG: correct_selected={correct_selected}, incorrect_selected={incorrect_selected}, total_correct={total_correct}")
+
+            if correct_selected == total_correct and incorrect_selected == 0:
+                attempted_question.is_correct = True
+                attempted_question.marks_obtained = question.maximum_marks
+            else:
+                ratio = (correct_selected / total_correct) if total_correct > 0 else 0
+                attempted_question.is_correct = False
+                attempted_question.marks_obtained = round(float(question.maximum_marks) * ratio, 2)
+
+        attempted_question.save(update_fields=['is_correct', 'marks_obtained'])
+
+        print(f"### EVAL DEBUG RESULT: is_correct={attempted_question.is_correct}, marks={attempted_question.marks_obtained}")
         self.update_score()
 
     def update_score(self):
-        marks_sum = self.attempts.filter(is_correct=True).aggregate(
-            models.Sum('marks_obtained'))['marks_obtained__sum']
-        self.total_score = marks_sum or 0
-        self.save()
+        total_score = self.attempts.aggregate(
+            total=models.Sum('marks_obtained')
+        )['total'] or 0
+        self.total_score = total_score
+        self.save(update_fields=['total_score'])
 
 
 class AttemptedQuestion(TimeStampedModel):
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
     quiz_profile = models.ForeignKey(QuizProfile, on_delete=models.CASCADE, related_name='attempts')
-    selected_choice = models.ForeignKey(Choice, on_delete=models.CASCADE, null=True)
+    selected_choices = models.ManyToManyField(Choice, blank=True)
     is_correct = models.BooleanField(_('Was this attempt correct?'), default=False, null=False)
     marks_obtained = models.DecimalField(_('Marks Obtained'), default=0, decimal_places=2, max_digits=6)
-
+    def __str__(self):
+        return f"{self.quiz_profile.user.username} - {self.question.html[:50]}"
     def get_absolute_url(self):
         return f'/submission-result/{self.pk}/'

@@ -36,17 +36,38 @@ def play(request):
     if request.method == 'POST':
         question_pk = request.POST.get('question_pk')
 
-        attempted_question = quiz_profile.attempts.select_related('question').get(question__pk=question_pk)
-
-        choice_pk = request.POST.get('choice_pk')
-
         try:
-            selected_choice = attempted_question.question.choices.get(pk=choice_pk)
+            attempted_question = quiz_profile.attempts.select_related('question').get(question__pk=question_pk)
+        except AttemptedQuestion.DoesNotExist:
+            raise Http404("Nincs ilyen kérdéskísérlet")
+
+        question = attempted_question.question
+
+        # --- DEBUG: nézzük meg pontosan mi érkezik be a POST-ban ---
+        print("### DEBUG: request.POST =", dict(request.POST))
+        print("### DEBUG: is_multiple_choice =", question.is_multiple_choice)
+
+        #  Többválaszos eset: checkboxok listában
+        if question.is_multiple_choice:
+            choice_pks = request.POST.getlist('choices')
+        else:
+            choice_pk = request.POST.get('choice_pk')
+            choice_pks = [choice_pk] if choice_pk else []
+
+        print("### DEBUG: raw choice_pks =", choice_pks)
+
+        #  Lekérjük a választott Choice objektumokat
+        try:
+            selected_choices = question.choices.filter(pk__in=choice_pks)
         except ObjectDoesNotExist:
-            raise Http404
+            raise Http404("A kiválasztott válasz nem létezik")
 
-        quiz_profile.evaluate_attempt(attempted_question, selected_choice)
+        print("### DEBUG: selected_choices from DB =", list(selected_choices.values_list('pk', flat=True)))
 
+        #  Értékelés
+        quiz_profile.evaluate_attempt(attempted_question, selected_choices)
+
+        #  Eredmény oldalra irányítás
         return redirect(attempted_question)
 
     else:
@@ -54,11 +75,10 @@ def play(request):
         if question is not None:
             quiz_profile.create_attempt(question)
 
-        context = {
-            'question': question,
-        }
-
+        context = {'question': question}
         return render(request, 'quiz/play.html', context=context)
+
+
 
 
 @login_required()
@@ -68,7 +88,7 @@ def submission_result(request, attempted_question_pk):
         'attempted_question': attempted_question,
     }
 
-    return render(request, 'quiz/submission_result.html', context=context)
+    return render(request, 'quiz/submission_result.html', context)
 
 
 def login_view(request):
