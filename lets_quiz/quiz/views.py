@@ -90,6 +90,23 @@ def submission_result(request, attempted_question_pk):
 
     return render(request, 'quiz/submission_result.html', context)
 
+@login_required()
+def restart_quiz(request):
+    """
+    Lehetővé teszi a felhasználónak, hogy újrakezdje a kvízt.
+    Törli az eddigi próbákat és nullázza az összesített pontszámot.
+    """
+    quiz_profile, created = QuizProfile.objects.get_or_create(user=request.user)
+
+    # Töröljük az eddig megválaszolt kérdéseket
+    quiz_profile.attempts.all().delete()
+
+    # Nullázzuk az eredményt
+    quiz_profile.total_score = 0
+    quiz_profile.save(update_fields=['total_score'])
+
+    # Visszairányítás a játék kezdéséhez
+    return redirect('quiz:play')
 
 def login_view(request):
     title = "Login"

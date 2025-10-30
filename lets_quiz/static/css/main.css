@@ -1,0 +1,166 @@
+/* === Alapértelmezett beállítások === */
+body {
+  background-color: #ffffff;
+  color: #1f2937; /* sötétszürke szöveg */
+  font-family: 'Rubik', 'Open Sans', sans-serif;
+}
+
+/* Minden szöveget biztosan sötétre állítunk */
+label, p, h1, h2, h3, h4, h5, h6, span, strong, .text, .question-text {
+  color: #1f2937 !important;
+}
+
+/* === Kérdésdoboz === */
+.question-text {
+  background: #ffffff;
+  border: 2px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  margin-bottom: 1.5rem;
+  font-size: 1.1rem;
+  text-align: center;
+}
+
+/* === Radio gomb dizájn (Uiverse: fast-turtle) === */
+.radio-input {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.radio-input .label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  width: 260px;
+  border-radius: 12px;
+  background-color: #fff;
+  border: 2px solid #e5e7eb;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: #1f2937;
+}
+
+.radio-input .label:hover {
+  background-color: #f3f4f6;
+  border-color: #6366f1;
+}
+
+.radio-input .label input[type="radio"] {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid #9ca3af;
+  transition: all 0.2s ease;
+  background: #fff;
+}
+
+.radio-input .label input[type="radio"]:checked {
+  border-color: #6366f1;
+  background-color: #6366f1;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
+}
+
+.radio-input .label .text {
+  font-size: 1rem;
+  color: #1f2937 !important;
+}
+
+/* === Checkbox dizájn (Uiverse: good-wasp) === */
+.checkbox-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  padding: 12px 18px;
+  width: 260px;
+  border-radius: 12px;
+  background-color: #fff;
+  border: 2px solid #e5e7eb;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: #1f2937;
+}
+
+.checkbox-label:hover {
+  background-color: #f9fafb;
+  border-color: #fbbf24;
+}
+
+.checkbox-label input[type="checkbox"] {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #9ca3af;
+  border-radius: 6px;
+  position: relative;
+  transition: all 0.3s ease;
+  background: #fff;
+}
+
+.checkbox-label input[type="checkbox"]:checked {
+  border-color: #fbbf24;
+  background-color: #fffbeb;
+  box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.2);
+}
+
+.checkbox-label input[type="checkbox"]:checked::after {
+  content: "✔";
+  position: absolute;
+  font-size: 14px;
+  color: #d97706;
+  left: 4px;
+  top: 0px;
+}
+
+/* === Gomb === */
+button[type="submit"] {
+  display: block;
+  margin: 2rem auto 0;
+  background-color: #6366f1;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 28px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 6px rgba(99, 102, 241, 0.3);
+}
+
+button[type="submit"]:hover {
+  background-color: #4f46e5;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.5);
+}
+
+.btn-warning {
+  background-color: #facc15;
+  border: none;
+  color: #1f2937;
+  font-weight: 600;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 6px rgba(251, 191, 36, 0.3);
+}
+
+.btn-warning:hover {
+  background-color: #eab308;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.5);
+}
+
+button,
+.btn {
+  cursor: pointer !important;
+}
