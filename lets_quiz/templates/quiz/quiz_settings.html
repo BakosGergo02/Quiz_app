@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="container mt-5">
+  <h2>{{ quiz.title }} – Beállítások</h2>
+  <p>{{ quiz.description }}</p>
+
+  <ul>
+    <li><b>Időkorlát:</b> {{ quiz.time_limit_seconds }} mp</li>
+    <li><b>Azonnali visszajelzés:</b> {{ quiz.immediate_feedback|yesno:"Igen,Nem" }}</li>
+    <li><b>Többször kitölthető:</b> {{ quiz.allow_multiple_attempts|yesno:"Igen,Nem" }}</li>
+  </ul>
+
+  <hr>
+  <h4>Kérdések</h4>
+  <ul>
+    {% for question in questions %}
+      <li>{{ question.text|safe }}</li>
+    {% empty %}
+      <li>Még nincsenek kérdések hozzáadva.</li>
+    {% endfor %}
+  </ul>
+
+  <a href="{% url 'quiz:select_question_type' quiz.id %}" class="btn btn-success">
+    + Kérdés hozzáadása
+  </a>
+
+</div>
+
+{% endblock %}

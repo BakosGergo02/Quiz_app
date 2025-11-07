@@ -60,9 +60,9 @@
 
       <!-- Következő kérdés gomb -->
       <div class="text-center mt-4">
-        <a href="{% url 'quiz:play' %}" class="btn btn-lg btn-primary">
-          Következő kérdés →
-        </a>
+        {% if quiz %}
+          <a href="{% url 'quiz:play' quiz.id %}" class="btn btn-info">Kvíz folytatása</a>
+        {% endif %}
       </div>
 
     </div>

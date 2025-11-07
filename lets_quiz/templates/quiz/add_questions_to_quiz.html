@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>{{ quiz.title }} – Kérdések hozzáadása</h2>
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+
+        <button type="submit" class="btn btn-primary">Mentés</button>
+        <a href="{% url 'quiz:user_home' %}" class="btn btn-secondary">Vissza</a>
+    </form>
+
+    <hr>
+
+    {% if quiz.question_set.all %}
+        <h3>Jelenlegi kérdések:</h3>
+        <ul>
+            {% for question in quiz.question_set.all %}
+                <li>{{ question.text }}</li>
+            {% empty %}
+                <li>Még nincs kérdés a kvízhez.</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+</div>
+{% endblock %}

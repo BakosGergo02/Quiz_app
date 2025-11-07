@@ -3,17 +3,99 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils.translation import gettext as _
 from model_utils.models import TimeStampedModel
+from django.conf import settings
+from django.utils import timezone
 import logging
 from decimal import Decimal
+from django.db import models
+
+
 
 logger = logging.getLogger(__name__)
+
+User = settings.AUTH_USER_MODEL
+
+class Quiz(models.Model):
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    time_limit_seconds = models.PositiveIntegerField(default=0)
+    immediate_feedback = models.BooleanField(default=False)
+    allow_multiple_attempts = models.BooleanField(default=True)
+    is_published = models.BooleanField(default=False)
+
+    def get_questions(self):
+        return [qq.question for qq in self.quiz_questions.all()]
+
+    def __str__(self):
+        return self.title
+
+    
+
+class QuizQuestion(models.Model):
+    """
+    Egy QuizQuestion csupán a sorrendet és a kapcsolatot tárolja
+    a Quiz és egy Question között.
+    """
+    quiz = models.ForeignKey(Quiz, related_name='quiz_questions', on_delete=models.CASCADE)
+    question = models.ForeignKey('Question', on_delete=models.CASCADE)
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        unique_together = ('quiz', 'order')
+        ordering = ['order']
+
+    def __str__(self):
+        return f"{self.quiz.title} - Q#{self.order} ({self.question.pk})"
+    
+
+class QuizAttempt(models.Model):
+    """
+    Egy felhasználó egy adott Quiz-el kapcsolatos futása (session).
+    Itt nyomon követjük a kezdést, befejezést, összpontot, és ha kell, a hátralévő időt.
+    """
+    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='attempts')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='quiz_attempts')
+    started_at = models.DateTimeField(auto_now_add=True)
+    finished_at = models.DateTimeField(null=True, blank=True)
+    current_index = models.IntegerField(default=0)  # hányadik kérdésnél tart (0-based)
+    total_score = models.DecimalField(default=Decimal('0.00'), decimal_places=2, max_digits=10)
+    is_finished = models.BooleanField(default=False)
+
+    def time_left(self):
+        """Ha van time_limit a quiz-en, mennyi van még (másodperc)"""
+        if self.quiz.time_limit_seconds <= 0:
+            return None
+        elapsed = (timezone.now() - self.started_at).total_seconds()
+        remaining = self.quiz.time_limit_seconds - elapsed
+        return max(0, int(remaining))
+
+    def finish(self):
+        self.is_finished = True
+        self.finished_at = timezone.now()
+        # összesítés: AttemptedQuestion-ök alapján (ha ilyeneket használsz)
+        total = self.attempted_questions.aggregate(total=models.Sum('marks_obtained'))['total'] or 0
+        self.total_score = total
+        self.save(update_fields=['is_finished', 'finished_at', 'total_score'])
+
+    def __str__(self):
+        return f"{self.user.username} - {self.quiz.title} - started {self.started_at}"
 
 class Question(TimeStampedModel):
     ALLOWED_NUMBER_OF_CORRECT_CHOICES = 1
 
-    html = models.TextField(_('Question Text'))
+    quiz = models.ForeignKey(
+        Quiz,
+        related_name='questions',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True
+    )
+
+    html = models.TextField(_('Kérdés szövege'))
     is_published = models.BooleanField(_('Has been published?'), default=False, null=False)
-    maximum_marks = models.DecimalField(_('Maximum Marks'), default=4, decimal_places=2, max_digits=6)
+    maximum_marks = models.DecimalField(_('Maximum Pontszám'), default=4, decimal_places=2, max_digits=6)
 
     is_multiple_choice = models.BooleanField(default=False)
 
@@ -49,6 +131,7 @@ class QuizProfile(TimeStampedModel):
     def create_attempt(self, question):
         attempted_question = AttemptedQuestion(question=question, quiz_profile=self)
         attempted_question.save()
+        return attempted_question
 
     def evaluate_attempt(self, attempted_question, selected_choices):
         """

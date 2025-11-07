@@ -2,22 +2,30 @@
 {% block title %} Let's Quiz | Home {% endblock title %}
 {% block content %}
 
-    <section id="section-jumbotron" class="jumbotron jumbotron-fluid d-flex justify-content-center align-items-center">
-      <div class="container text-center">
-        <h1 class="display-1 text-info">Quiz App</h1>
-        <p class="display-4 d-none d-sm-block">Tesztelje le tudását!</p>
+<section id="section-jumbotron" class="jumbotron jumbotron-fluid d-flex justify-content-center align-items-center">
+  <div class="container text-center">
+    <h1 class="display-1 text-info">Quiz App</h1>
+    <p class="display-4 d-none d-sm-block">Tesztelje le tudását!</p>
 
-        {% if not request.user.is_active %}
-
-        <p class="lead">Különböző kvíz kérdésekkel.</p>
-        <p><strong> Regisztráljon itt:</strong></p>
-        <a href="{% url 'quiz:register' %}" class="btn btn-lg btn-info mt-1"><i class="fa fa-user-plus" aria-hidden="true"></i> Regisztráció</a>
-
-        {% else %}
-        <a href="{% url 'quiz:play' %}" class="btn btn-lg btn-info mt-1">Kvíz kezdése</a>
-        <a href="{% url 'quiz:leaderboard' %}" class="btn btn-lg btn-info mt-1">Ranglista</a>
-        {% endif %}
-      </div>  
-    </section>
+    {% if not request.user.is_authenticated %}
+      <p class="lead">Különböző kvíz kérdésekkel.</p>
+      <p><strong> Regisztráljon itt:</strong></p>
+      <a href="{% url 'quiz:register' %}" class="btn btn-lg btn-info mt-1">
+        <i class="fa fa-user-plus" aria-hidden="true"></i> Regisztráció
+      </a>
+      <a href="{% url 'quiz:login' %}" class="btn btn-lg btn-info mt-1">Bejelentkezés</a>
+    {% else %}
+      <h4 class="mt-4 text-info">Válassz kvízt:</h4>
+      {% for quiz in quizzes %}
+        <a href="{% url 'quiz:play' quiz.id %}" class="btn btn-lg btn-info mt-2">
+          {{ quiz.title }} kvíz kezdése
+        </a>
+      {% empty %}
+        <p>Nincs elérhető kvíz.</p>
+      {% endfor %}
+      <a href="{% url 'quiz:leaderboard' %}" class="btn btn-lg btn-secondary mt-2">Ranglista</a>
+    {% endif %}
+  </div>  
+</section>
 
 {% endblock content %}

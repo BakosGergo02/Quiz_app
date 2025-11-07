@@ -2,7 +2,39 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import authenticate, get_user_model
 from django.utils.translation import gettext as _
-from .models import Question, Choice
+from .models import Question, Choice, Quiz
+from django import forms
+
+class QuizSettingsForm(forms.Form):
+    QUESTION_TYPES = (
+        ('single', 'Egy választás (Single Choice)'),
+        ('multiple', 'Több választás (Multiple Choice)'),
+        # később jön: ('text', 'Szöveges válasz'), ('dragdrop', 'Drag & Drop')
+    )
+
+    FEEDBACK_TYPES = (
+        ('instant', 'Azonnali visszajelzés'),
+        ('final', 'Visszajelzés a végén'),
+    )
+
+    question_type = forms.ChoiceField(
+        choices=QUESTION_TYPES,
+        label="Kérdés típusa",
+        widget=forms.RadioSelect
+    )
+
+    time_limit = forms.IntegerField(
+        label="Időkorlát (másodperc)",
+        min_value=0,
+        required=False,
+        help_text="Hagyd üresen, ha nincs időkorlát."
+    )
+
+    feedback_mode = forms.ChoiceField(
+        choices=FEEDBACK_TYPES,
+        label="Visszajelzés módja",
+        widget=forms.RadioSelect
+    )
 
 
 class QuestionForm(forms.ModelForm):
@@ -13,6 +45,39 @@ class QuestionForm(forms.ModelForm):
             'html': forms.Textarea(attrs={'rows': 3, 'cols': 80}),
         }
 
+class BaseQuestionForm(forms.ModelForm):
+    option1 = forms.CharField(label="1. válaszlehetőség", max_length=255)
+    option2 = forms.CharField(label="2. válaszlehetőség", max_length=255)
+    option3 = forms.CharField(label="3. válaszlehetőség", max_length=255, required=False)
+    option4 = forms.CharField(label="4. válaszlehetőség", max_length=255, required=False)
+
+    class Meta:
+        model = Question
+        fields = ['html', 'maximum_marks']
+
+class SingleChoiceQuestionForm(BaseQuestionForm):
+    correct_option = forms.ChoiceField(
+        label="Helyes válasz",
+        choices=[
+            ('1', '1. válasz'),
+            ('2', '2. válasz'),
+            ('3', '3. válasz'),
+            ('4', '4. válasz')
+        ],
+        widget=forms.RadioSelect
+    )
+
+class MultipleChoiceQuestionForm(BaseQuestionForm):
+    correct_options = forms.MultipleChoiceField(
+        label="Helyes válasz(ok)",
+        choices=[
+            ('1', '1. válasz'),
+            ('2', '2. válasz'),
+            ('3', '3. válasz'),
+            ('4', '4. válasz')
+        ],
+        widget=forms.CheckboxSelectMultiple
+    )
 
 class ChoiceForm(forms.ModelForm):
     class Meta:
@@ -53,6 +118,19 @@ class ChoiceInlineFormset(forms.BaseInlineFormSet):
                 raise forms.ValidationError(_('Többválaszos kérdéshez legalább 1 helyes válasz szükséges.'))
 
 
+class QuizCreateForm(forms.ModelForm):
+    class Meta:
+        model = Quiz
+        fields = ['title', 'description', 'time_limit_seconds', 'immediate_feedback', 'allow_multiple_attempts']
+        widgets = {
+            'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Kvíz címe'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Kvíz leírása'}),
+            'time_limit_seconds': forms.NumberInput(attrs={'class': 'form-control', 'min': '0'}),
+            'immediate_feedback': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'allow_multiple_attempts': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+
 User = get_user_model()
 
 
@@ -67,11 +145,11 @@ class UserLoginForm(forms.Form):
         if username and password:
             user = authenticate(username=username, password=password)
             if not user:
-                raise forms.ValidationError("This user does not exists")
+                raise forms.ValidationError("Ez a felhasználó nem létezik!")
             if not user.check_password(password):
-                raise forms.ValidationError("Incorrect password")
+                raise forms.ValidationError("Helytelen jelszó!")
             if not user.is_active:
-                raise forms.ValidationError("This user is not active")
+                raise forms.ValidationError("Ez a felhasználó nem aktív!")
         return super(UserLoginForm, self).clean(*args, **kwargs)
 
 

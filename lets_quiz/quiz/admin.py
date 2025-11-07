@@ -1,9 +1,21 @@
 from django.contrib import admin
 
-from .models import Question, Choice
+from .models import Question, Choice, Quiz, QuizQuestion, QuizAttempt
 from .forms import QuestionForm, ChoiceForm, ChoiceInlineFormset
 # Register your models here.
 
+class QuizQuestionInline(admin.TabularInline):
+    model = QuizQuestion
+    extra = 1
+
+@admin.register(Quiz)
+class QuizAdmin(admin.ModelAdmin):
+    list_display = ('title', 'created_by', 'is_published', 'time_limit_seconds', 'immediate_feedback')
+    inlines = [QuizQuestionInline]
+
+@admin.register(QuizAttempt)
+class QuizAttemptAdmin(admin.ModelAdmin):
+    list_display = ('quiz', 'user', 'started_at', 'finished_at', 'total_score', 'is_finished')
 
 class ChoiceInline(admin.TabularInline):
     model = Choice

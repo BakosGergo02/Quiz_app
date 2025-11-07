@@ -8,15 +8,15 @@
         <div class="container">
           <div class="row">
             <div class="col-12 col-sm-8 col-md-6 col-lg-4 offset-sm-2 offset-md-3 offset-lg-4">
-              <h1 class="mb-3 text-center">Create a new account</h1>
+              <h1 class="mb-3 text-center">Regisztráció</h1>
               <form class="mb-3" method="POST" action="">
                 {% csrf_token %}
 		        {{form|crispy}}
 		        <input type="submit" class="btn btn-info btn-block mb-3" value="{{ title }}"> 
               </form>
               <div class="text-center">
-                <p>or ...</p>
-                <a href="{% url 'quiz:login' %}" class="btn btn-success">Login</a>
+                <p>vagy ...</p>
+                <a href="{% url 'quiz:login' %}" class="btn btn-success">Bejelentkezés</a>
               </div>
             </div>
           </div>
@@ -30,7 +30,11 @@
         <h1 class="display-1 text-info">Let's Quiz</h1>
         <p class="display-4 d-none d-sm-block">Test your skills and become a master.</p>
         <p class="lead">We organize quizzes on various topics.</p>
-        <a href="{% url 'quiz:play' %}" class="btn btn-lg btn-info mt-1">Let's play</a>
+        {% for quiz in quizzes %}
+          <a href="{% url 'quiz:play' quiz.id %}" class="btn btn-lg btn-info mt-1">
+            {{ quiz.title }} kvíz kezdése
+          </a>
+        {% endfor %}
         <a href="{% url 'quiz:leaderboard' %}" class="btn btn-lg btn-info mt-1">Leaderboard</a>
       </div>  
     </section>

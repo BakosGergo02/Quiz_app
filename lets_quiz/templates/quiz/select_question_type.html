@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h3>Kérdéstípus kiválasztása a "{{ quiz.title }}" kvízhez</h3>
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-group mt-3">
+            <label for="question_type">Válassz kérdéstípust:</label>
+            <select name="question_type" id="question_type" class="form-control">
+                <option value="single">Single Choice</option>
+                <option value="multiple">Multiple Choice</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary mt-3">Tovább</button>
+    </form>
+    <a href="{% url 'quiz:quiz_settings' quiz.id %}" class="btn btn-link mt-3">Vissza</a>
+</div>
+{% endblock %}

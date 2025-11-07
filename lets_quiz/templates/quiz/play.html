@@ -74,7 +74,7 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-dismiss="modal">Mégse</button>
-          <a href="{% url 'quiz:restart_quiz' %}" class="btn btn-danger">Igen, kezdd újra</a>
+          <a href="{% url 'quiz:restart_quiz' quiz.id %}" class="btn btn-danger">Igen, kezdd újra</a>
         </div>
       </div>
     </div>
