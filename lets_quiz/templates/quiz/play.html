@@ -5,6 +5,21 @@
 <link rel="stylesheet" href="{% static 'css/main.css' %}">
 
 <div class="container py-5">
+  {% if quiz.time_limit_seconds > 0 %}
+  <div id="timer-box"
+      style="font-size: 22px; font-weight: bold; color: #4f78d9; margin-bottom: 20px;">
+
+    Hátralévő idő:
+    <span
+        id="timer-display"
+        data-timeleft="{{ remaining_time }}"
+        data-endurl="{% url 'quiz:quiz_end' quiz.id %}">
+        {{ remaining_time }}
+    </span>
+  </div>
+
+  <script src="{% static 'js/quiz_timer.js' %}"></script>
+  {% endif %}
   {% if question %}
     <h2>Kérdés</h2>
     <form method="POST" class="text-center">

@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container my-5">
+  <div class="card shadow-lg border-0 rounded-3">
+    <div class="card-body p-4 text-center">
+
+      <h2 class="text-primary mb-4">{{ quiz.title }} vége!</h2>
+
+      <h4 class="mb-4">Összesített pontszámod: 
+        <span class="text-success">{{ total_score }}</span>
+      </h4>
+
+      <a href="{% url 'quiz:leaderboard' %}" class="btn btn-lg btn-warning mt-3 ml-2">
+          Nézd meg a ranglistát
+      </a>
+
+      <br>
+      <a href="{% url 'quiz:quiz_results' quiz.id %}" class="btn btn-lg btn-warning mt-3 ml-2">
+        Eredmények megtekintése
+      </a>
+
+      <!-- Modal trigger -->
+    <button 
+      type="button" 
+      class="btn btn-lg btn-warning mt-3 ml-2"
+      style="cursor: pointer;"
+      data-toggle="modal" 
+      data-target="#restartModal">
+      🔁 Kvíz újrakezdése
+    </button>
+  </div>
+
+<!-- Modal -->
+        <div class="modal fade" id="restartModal" tabindex="-1" role="dialog" aria-labelledby="restartModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="restartModalLabel">Kvíz újrakezdése</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Bezárás">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                </div>
+                <div class="modal-body">
+                Biztosan újra szeretnéd kezdeni a kvízt?<br>
+                Az eddigi pontszámod <strong>nullázódni fog</strong>.
+                </div>
+                <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Mégse</button>
+                <a href="{% url 'quiz:restart_quiz' quiz.id %}" class="btn btn-danger">Igen, kezdd újra</a>
+                </div>
+            </div>
+            </div>
+        </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

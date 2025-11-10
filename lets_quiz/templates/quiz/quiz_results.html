@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<h2>{{ quiz.title }} eredményeid</h2>
+
+<p><strong>Összpontszám:</strong> {{ total_score }}</p>
+
+{% for a in attempts %}
+  <div class="card my-3 p-3">
+
+    <h4>Kérdés:</h4>
+    <div>{{ a.question.html|safe }}</div>
+
+    <h5 class="mt-3">A te válaszod:</h5>
+    {% if a.selected_choices.all %}
+        {% for c in a.selected_choices.all %}
+            <div>• {{ c.html|safe }}</div>
+        {% endfor %}
+    {% else %}
+        <div><em>Nem választottál semmit.</em></div>
+    {% endif %}
+
+    <h5 class="mt-3">Helyes válasz(ok):</h5>
+    {% for c in a.question.choices.all %}
+        {% if c.is_correct %}
+            <div>✅ {{ c.html|safe }}</div>
+        {% endif %}
+    {% endfor %}
+
+    <p class="mt-3"><strong>Pont:</strong> {{ a.marks_obtained }}</p>
+
+  </div>
+{% empty %}
+  <p>Nincs egyetlen attempt sem ehhez a kvízhez.</p>
+{% endfor %}
+
+<a class="btn btn-primary mt-3" href="{% url 'quiz:play' quiz.id %}">Vissza a kvízekhez</a>
+
+{% endblock %}

@@ -25,15 +25,11 @@
                             <li>You will be told immediately whether your answer was correct or incorrect once you submit the answer.</li>
                         </ul>
                     </p>
-                    {% if quizzes %}
-                        {% for quiz in quizzes %}
-                            <a href="{% url 'quiz:play' quiz.id %}" class="btn btn-primary my-2">
-                            {{ quiz.title }} kvíz indítása
-                            </a><br>
-                        {% endfor %}
-                    {% else %}
-                        <p>Nincs elérhető kvíz.</p>
-                    {% endif %}
+                    <div class="text-center mt-4">
+                        <a href="{% url 'quiz:home' %}" class="btn btn-lg btn-info">
+                            Rendben
+                        </a>
+                    </div>
                 </div>  
                 <div class="card-footer">Rules last modified 08-March-2018</div>  
             </div>  

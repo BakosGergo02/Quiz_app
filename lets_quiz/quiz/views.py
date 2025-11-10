@@ -1,3 +1,4 @@
+from django.utils import timezone
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
@@ -7,7 +8,7 @@ from django.http import Http404
 from .models import QuizProfile, Quiz, AttemptedQuestion, QuizQuestion, Choice
 from .forms import UserLoginForm, RegistrationForm, QuizCreateForm, SingleChoiceQuestionForm, MultipleChoiceQuestionForm
 from django.db.models import Max
-
+from django.db import models
 
 @login_required
 def create_quiz(request):
@@ -23,17 +24,6 @@ def create_quiz(request):
         form = QuizCreateForm()
 
     return render(request, 'quiz/quiz_create.html', {'form': form})
-
-@login_required
-def quiz_settings_view(request, quiz_id):
-    quiz = get_object_or_404(Quiz, id=quiz_id)
-    questions = quiz.get_questions()  # ha van Question model
-
-    return render(request, 'quiz/quiz_settings.html', {
-        'quiz': quiz,
-        'questions': questions,
-    })
-
 
 @login_required
 def select_question_type(request, quiz_id):
@@ -163,10 +153,27 @@ def leaderboard(request):
 
 
 @login_required()
-def play(request,quiz_id):
+def play(request, quiz_id):
     quiz = get_object_or_404(Quiz, id=quiz_id)
     request.session['current_quiz_id'] = quiz.id
     quiz_profile, created = QuizProfile.objects.get_or_create(user=request.user)
+
+    # 1) ha PAUSE-oltunk korábban (submission_result miatt), akkor onnan folytatunk
+    paused = request.session.get('quiz_paused', False)
+    if paused:
+        remaining = request.session.get('paused_remaining', 0)
+    else:
+        # eredeti logika
+        if 'quiz_start_time' not in request.session:
+            request.session['quiz_start_time'] = timezone.now().timestamp()
+
+        start_time = request.session['quiz_start_time']
+        elapsed = timezone.now().timestamp() - start_time
+        remaining = max(0, quiz.time_limit_seconds - int(elapsed))
+
+    # ha bárhogy is számoltuk, de elfogyott:
+    if quiz.time_limit_seconds > 0 and remaining <= 0:
+        return redirect('quiz:quiz_end', quiz_id=quiz.id)
 
     if request.method == 'POST':
         question_pk = request.POST.get('question_pk')
@@ -178,35 +185,29 @@ def play(request,quiz_id):
 
         question = attempted_question.question
 
-
-    
-        #  Többválaszos eset: checkboxok listában
         if question.is_multiple_choice:
             choice_pks = request.POST.getlist('choices')
         else:
             choice_pks = [request.POST.get('choice_pk')] if request.POST.get('choice_pk') else []
 
-        #print("### DEBUG: raw choice_pks =", choice_pks)
-
-        #  Lekérjük a választott Choice objektumokat
-        try:
-            selected_choices = question.choices.filter(pk__in=choice_pks)
-        except ObjectDoesNotExist:
-            raise Http404("A kiválasztott válasz nem létezik")
-
-
-        #  Értékelés
+        selected_choices = question.choices.filter(pk__in=choice_pks)
         quiz_profile.evaluate_attempt(attempted_question, selected_choices)
 
-        #  Eredmény oldalra irányítás
+        # 🔴 ITT jön az új rész: ha azonnali visszajelzés van, akkor állítsuk meg az órát
         if quiz.immediate_feedback:
-        # mutassuk a kérdés utáni eredményt
+            # eltesszük a maradék időt
+            request.session['quiz_paused'] = True
+            request.session['paused_remaining'] = remaining
             return redirect('quiz:submission_result', attempted_question.pk)
         else:
-        # NINCS köztes eredmény — egyből léptet tovább
             return redirect('quiz:play', quiz_id=quiz.id)
 
     else:
+        # ha eddig pause-oltunk, akkor MOST megszüntetjük a pause-t
+        if request.session.get('quiz_paused', False):
+            request.session.pop('quiz_paused', None)
+            # a paused_remaining maradhat, de nem muszáj
+
         quiz_questions = quiz.quiz_questions.all()
         answered_ids = quiz_profile.attempts.values_list('question_id', flat=True)
         next_quiz_question = quiz_questions.exclude(question__id__in=answered_ids).first()
@@ -218,12 +219,14 @@ def play(request,quiz_id):
                 'question': next_quiz_question.question,
                 'quiz': quiz,
                 'attempted_question': attempted_question,
+                'remaining_time': remaining,
                 'choices': next_quiz_question.question.choices.all(),   # Helyes attr
             }
         else:
-            context = {'question': None, 'quiz': quiz}
-
+            return redirect('quiz:quiz_end', quiz_id=quiz.id)
+        
         return render(request, 'quiz/play.html', context)
+        
 
 def quiz_settings_view(request, quiz_id):
     quiz = get_object_or_404(Quiz, id=quiz_id)
@@ -234,20 +237,39 @@ def quiz_settings_view(request, quiz_id):
         'questions': questions,
     })
 
+@login_required
+def quiz_results(request, quiz_id):
+    quiz = get_object_or_404(Quiz, id=quiz_id)
+    quiz_profile = QuizProfile.objects.get(user=request.user)
+
+    # Csak az adott kvízhez tartozó AttemptedQuestion-ök
+    attempts = AttemptedQuestion.objects.filter(
+        quiz_profile=quiz_profile,
+        question__quizquestions__quiz=quiz
+    ).select_related('question').prefetch_related('selected_choices')
+
+    # Összpontszám
+    total_score = attempts.aggregate(total=models.Sum('marks_obtained'))['total'] or 0
+
+    context = {
+        'quiz': quiz,
+        'attempts': attempts,
+        'total_score': total_score,
+    }
+    return render(request, 'quiz/quiz_results.html', context)
+
+
 @login_required()
 def submission_result(request, attempted_question_pk):
 
     attempted_question = get_object_or_404(AttemptedQuestion, pk=attempted_question_pk)
 
-    quiz = attempted_question.question.quiz
+    quiz = attempted_question.question.quizquestions.first().quiz
     context = {
         'attempted_question': attempted_question,
         'quiz':quiz,
     }
 
-
-    if 'current_quiz_id' in request.session:
-        del request.session['current_quiz_id']
     return render(request, 'quiz/submission_result.html', context)
 
 
@@ -279,6 +301,27 @@ def restart_quiz(request, quiz_id=None):
 
     # Visszairányítás a play view-hoz: fontos a quiz_id átadása
     return redirect('quiz:play', quiz_id=quiz.id)
+
+@login_required
+def quiz_end(request, quiz_id):
+    quiz = get_object_or_404(Quiz, id=quiz_id)
+    quiz_profile = QuizProfile.objects.get(user=request.user)
+
+    if 'quiz_start_time' in request.session:
+        del request.session['quiz_start_time']
+
+    # Teljes pontszám összesítése AttemptedQuestion alapján
+    total_score = quiz_profile.attempts.filter(
+        question__in=quiz.get_questions()
+    ).aggregate(total=models.Sum('marks_obtained'))['total'] or 0
+
+    context = {
+        'quiz': quiz,
+        'total_score': total_score,
+    }
+
+    return render(request, 'quiz/quiz_end.html', context)
+
 
 
 def login_view(request):

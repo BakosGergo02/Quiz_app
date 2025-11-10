@@ -39,7 +39,7 @@ class QuizQuestion(models.Model):
     a Quiz és egy Question között.
     """
     quiz = models.ForeignKey(Quiz, related_name='quiz_questions', on_delete=models.CASCADE)
-    question = models.ForeignKey('Question', on_delete=models.CASCADE)
+    question = models.ForeignKey('Question', related_name='quizquestions', on_delete=models.CASCADE)
     order = models.PositiveIntegerField(default=0)
 
     class Meta:
