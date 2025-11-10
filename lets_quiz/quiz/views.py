@@ -12,12 +12,21 @@ from django.db import models
 
 @login_required
 def create_quiz(request):
+
+    user = request.user
+    is_teacher = user.is_superuser or user.groups.filter(name='Tanár').exists()
+
+    if not is_teacher:
+        messages.error(request, "Nincs jogosultságod kvízt létrehozni.")
+        return redirect('quiz:home')
+
     if request.method == 'POST':
         form = QuizCreateForm(request.POST)
         if form.is_valid():
             quiz = form.save(commit=False)
             quiz.created_by = request.user
             quiz.save()
+            form.save_m2m()
             messages.success(request, f'A "{quiz.title}" kvíz sikeresen létrejött!')
             return redirect('quiz:quiz_settings', quiz_id=quiz.id)
     else:
@@ -155,10 +164,23 @@ def leaderboard(request):
 @login_required()
 def play(request, quiz_id):
     quiz = get_object_or_404(Quiz, id=quiz_id)
+    
+    has_user_limit = quiz.allowed_users.exists()
+    has_group_limit = quiz.allowed_groups.exists()
+
+    if has_user_limit or has_group_limit:
+        user_allowed = quiz.allowed_users.filter(id=request.user.id).exists()
+        group_allowed = quiz.allowed_groups.filter(id__in=request.user.groups.values_list('id', flat=True)).exists()
+
+        if not (user_allowed or group_allowed or request.user.is_superuser):
+            from django.contrib import messages
+            messages.error(request, "Ehhez a kvízhez nincs hozzáférésed.")
+            return redirect('quiz:home')
+    # --- innen mehet a te eddigi kódod ---
+
     request.session['current_quiz_id'] = quiz.id
     quiz_profile, created = QuizProfile.objects.get_or_create(user=request.user)
 
-    # 1) ha PAUSE-oltunk korábban (submission_result miatt), akkor onnan folytatunk
     paused = request.session.get('quiz_paused', False)
     if paused:
         remaining = request.session.get('paused_remaining', 0)
@@ -193,7 +215,6 @@ def play(request, quiz_id):
         selected_choices = question.choices.filter(pk__in=choice_pks)
         quiz_profile.evaluate_attempt(attempted_question, selected_choices)
 
-        # 🔴 ITT jön az új rész: ha azonnali visszajelzés van, akkor állítsuk meg az órát
         if quiz.immediate_feedback:
             # eltesszük a maradék időt
             request.session['quiz_paused'] = True
@@ -228,13 +249,35 @@ def play(request, quiz_id):
         return render(request, 'quiz/play.html', context)
         
 
+from django.contrib.auth.models import User, Group
+
+@login_required
 def quiz_settings_view(request, quiz_id):
     quiz = get_object_or_404(Quiz, id=quiz_id)
     questions = [qq.question for qq in quiz.quiz_questions.all()]
 
+    # összes user és csoport a kiválasztáshoz
+    all_users = User.objects.all().order_by('username')
+    all_groups = Group.objects.all().order_by('name')
+
+    if request.method == 'POST':
+        # user-ek
+        selected_user_ids = request.POST.getlist('allowed_users')
+        # csoportok
+        selected_group_ids = request.POST.getlist('allowed_groups')
+
+        quiz.allowed_users.set(selected_user_ids)
+        quiz.allowed_groups.set(selected_group_ids)
+
+        from django.contrib import messages
+        messages.success(request, "Hozzáférési beállítások frissítve.")
+        return redirect('quiz:quiz_settings', quiz_id=quiz.id)
+
     return render(request, 'quiz/quiz_settings.html', {
         'quiz': quiz,
         'questions': questions,
+        'all_users': all_users,
+        'all_groups': all_groups,
     })
 
 @login_required

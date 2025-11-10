@@ -1,9 +1,12 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import authenticate, get_user_model
+from django.contrib.auth.models import Group
 from django.utils.translation import gettext as _
 from .models import Question, Choice, Quiz
 from django import forms
+
+User = get_user_model()
 
 class QuizSettingsForm(forms.Form):
     QUESTION_TYPES = (
@@ -119,6 +122,14 @@ class ChoiceInlineFormset(forms.BaseInlineFormSet):
 
 
 class QuizCreateForm(forms.ModelForm):
+
+    allowed_users = forms.ModelMultipleChoiceField(
+        queryset=User.objects.none(),
+        required=False,
+        widget=forms.SelectMultiple(attrs={'class': 'form-control', 'size': '10'}),
+        label="Diákok, akik kitölthetik"
+    )
+
     class Meta:
         model = Quiz
         fields = ['title', 'description', 'time_limit_seconds', 'immediate_feedback', 'allow_multiple_attempts']
@@ -130,8 +141,15 @@ class QuizCreateForm(forms.ModelForm):
             'allow_multiple_attempts': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
 
-
-User = get_user_model()
+    def __init__(self, *args, **kwargs):
+        super(QuizCreateForm, self).__init__(*args, **kwargs)
+        # próbáljuk meg a "Tanár" csoportot kiszűrni -> ami marad, az diák
+        try:
+            teacher_group = Group.objects.get(name='Tanár')
+            self.fields['allowed_users'].queryset = User.objects.exclude(groups=teacher_group)
+        except Group.DoesNotExist:
+            # ha nincs ilyen csoport, akkor minden user listázható
+            self.fields['allowed_users'].queryset = User.objects.all()
 
 
 class UserLoginForm(forms.Form):

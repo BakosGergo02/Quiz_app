@@ -1,6 +1,6 @@
 import random
 from django.db import models
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from django.utils.translation import gettext as _
 from model_utils.models import TimeStampedModel
 from django.conf import settings
@@ -25,6 +25,21 @@ class Quiz(models.Model):
     allow_multiple_attempts = models.BooleanField(default=True)
     is_published = models.BooleanField(default=False)
 
+
+    allowed_users = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        related_name='quizzes_allowed',
+        blank=True,
+        help_text="Azok a felhasználók, akik kitölthetik ezt a kvízt."
+    )
+
+    allowed_groups = models.ManyToManyField(
+        Group,
+        related_name='quizzes_allowed',
+        blank=True,
+        help_text="Azok a csoportok, amelyek tagjai kitölthetik a kvízt."
+    )
+    
     def get_questions(self):
         return [qq.question for qq in self.quiz_questions.all()]
 

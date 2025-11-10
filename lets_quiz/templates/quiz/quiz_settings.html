@@ -12,6 +12,39 @@
   </ul>
 
   <hr>
+  <div class="mt-4 mb-4">
+    <h4>Hozzáférés beállítása</h4>
+    <form method="post">
+      {% csrf_token %}
+
+      <div class="form-group">
+        <label>Engedélyezett felhasználók (Diákok):</label>
+        <select name="allowed_users" multiple class="form-control" size="6">
+          {% for user in all_users %}
+            <option value="{{ user.id }}" {% if user in quiz.allowed_users.all %}selected{% endif %}>
+              {{ user.username }}
+            </option>
+          {% endfor %}
+        </select>
+        <small class="form-text text-muted">Tartsd lenyomva a Ctrl-t több kijelöléséhez.</small>
+      </div>
+
+      <div class="form-group mt-3">
+        <label>Engedélyezett csoportok:</label>
+        <select name="allowed_groups" multiple class="form-control" size="5">
+          {% for group in all_groups %}
+            <option value="{{ group.id }}" {% if group in quiz.allowed_groups.all %}selected{% endif %}>
+              {{ group.name }}
+            </option>
+          {% endfor %}
+        </select>
+        <small class="form-text text-muted">Tartsd lenyomva a Ctrl-t több kijelöléséhez.</small>
+      </div>
+
+      <button type="submit" class="btn btn-primary mt-3">Hozzáférés mentése</button>
+    </form>
+  </div>
+
   <h4>Kérdések</h4>
   <ul>
     {% for question in questions %}
