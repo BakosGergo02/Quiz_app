@@ -82,6 +82,21 @@ class MultipleChoiceQuestionForm(BaseQuestionForm):
         widget=forms.CheckboxSelectMultiple
     )
 
+class TextQuestionForm(forms.ModelForm):
+    correct_text_answer = forms.CharField(
+        label="Helyes válasz (szöveg)",
+        max_length=255,
+        required=True,
+        widget=forms.TextInput(attrs={'class': 'form-control'})
+    )
+
+    class Meta:
+        model = Question
+        fields = ['html', 'maximum_marks', 'correct_text_answer']
+        widgets = {
+            'html': forms.Textarea(attrs={'rows': 3, 'cols': 80}),
+        }
+
 class ChoiceForm(forms.ModelForm):
     class Meta:
         model = Choice

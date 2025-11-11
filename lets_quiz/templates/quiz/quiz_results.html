@@ -12,7 +12,19 @@
     <div>{{ a.question.html|safe }}</div>
 
     <h5 class="mt-3">A te válaszod:</h5>
-    {% if a.selected_choices.all %}
+
+    {# 🔴 ha szöveges kérdés #}
+    {% if a.question.correct_text_answer %}
+        {% if a.text_answer %}
+            <div class="alert alert-secondary py-2 mb-2">
+                {{ a.text_answer }}
+            </div>
+        {% else %}
+            <div><em>Nem adtál meg választ.</em></div>
+        {% endif %}
+
+    {# ✅ különben choice-ok #}
+    {% elif a.selected_choices.all %}
         {% for c in a.selected_choices.all %}
             <div>• {{ c.html|safe }}</div>
         {% endfor %}
@@ -21,11 +33,19 @@
     {% endif %}
 
     <h5 class="mt-3">Helyes válasz(ok):</h5>
-    {% for c in a.question.choices.all %}
-        {% if c.is_correct %}
-            <div>✅ {{ c.html|safe }}</div>
-        {% endif %}
-    {% endfor %}
+
+    {# 🔴 ha szöveges kérdés #}
+    {% if a.question.correct_text_answer %}
+        <div class="alert alert-info py-2 mb-2">
+            {{ a.question.correct_text_answer }}
+        </div>
+    {% else %}
+        {% for c in a.question.choices.all %}
+            {% if c.is_correct %}
+                <div>✅ {{ c.html|safe }}</div>
+            {% endif %}
+        {% endfor %}
+    {% endif %}
 
     <p class="mt-3"><strong>Pont:</strong> {{ a.marks_obtained }}</p>
 

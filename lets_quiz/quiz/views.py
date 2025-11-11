@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import Http404
 from .models import QuizProfile, Quiz, AttemptedQuestion, QuizQuestion, Choice
-from .forms import UserLoginForm, RegistrationForm, QuizCreateForm, SingleChoiceQuestionForm, MultipleChoiceQuestionForm
+from .forms import UserLoginForm, RegistrationForm, QuizCreateForm, SingleChoiceQuestionForm, MultipleChoiceQuestionForm, TextQuestionForm
 from django.db.models import Max
 from django.db import models
 
@@ -35,6 +35,51 @@ def create_quiz(request):
     return render(request, 'quiz/quiz_create.html', {'form': form})
 
 @login_required
+def quiz_list(request):
+    # csak tanár vagy superuser
+    is_teacher = request.user.is_superuser or request.user.groups.filter(name='Tanár').exists()
+    if not is_teacher:
+        messages.error(request, "Nincs jogosultságod a kvízek kezeléséhez.")
+        return redirect('quiz:home')
+
+    # ha akarod, itt lehetne szűrni created_by szerint is
+    quizzes = Quiz.objects.all().order_by('-created_at')
+
+    return render(request, 'quiz/quiz_list.html', {
+        'quizzes': quizzes,
+    })
+
+from django.contrib.auth.models import User, Group
+
+@login_required
+def manage_user_groups(request):
+    # csak tanár vagy superuser
+    is_teacher = request.user.is_superuser or request.user.groups.filter(name='Tanár').exists()
+    if not is_teacher:
+        messages.error(request, "Nincs jogosultságod a felhasználók csoportjainak kezeléséhez.")
+        return redirect('quiz:home')
+
+    users = User.objects.all().order_by('username')
+    groups = Group.objects.all().order_by('name')
+
+    if request.method == 'POST':
+        # azt várjuk, hogy minden userhez jön egy többes listamező:
+        # name="groups_<user_id>"
+        for user in users:
+            field_name = f"groups_{user.id}"
+            group_ids = request.POST.getlist(field_name)
+            # beállítjuk az adott user csoportjait a beküldött listára
+            user.groups.set(group_ids)
+        messages.success(request, "Csoporttagságok mentve.")
+        return redirect('quiz:manage_user_groups')
+
+    return render(request, 'quiz/manage_user_groups.html', {
+        'users': users,
+        'groups': groups,
+    })
+
+
+@login_required
 def select_question_type(request, quiz_id):
     quiz = get_object_or_404(Quiz, id=quiz_id)
 
@@ -44,6 +89,8 @@ def select_question_type(request, quiz_id):
             return redirect('quiz:add_single_question', quiz_id=quiz.id)
         elif q_type == 'multiple':
             return redirect('quiz:add_multiple_question', quiz_id=quiz.id)
+        elif q_type == 'text':
+            return redirect('quiz:add_text_question', quiz_id=quiz.id)
         else:
             messages.error(request, "Ismeretlen kérdéstípus.")
     
@@ -137,16 +184,36 @@ def add_multiple_question(request, quiz_id):
 
     return render(request, "quiz/add_multiple_question.html", {"form": form, "quiz": quiz})
 
+@login_required
+def add_text_question(request, quiz_id):
+    quiz = get_object_or_404(Quiz, id=quiz_id)
 
+    if request.method == "POST":
+        form = TextQuestionForm(request.POST)
+        if form.is_valid():
+            question = form.save(commit=False)
+            question.is_multiple_choice = False
+            question.save()
+
+            # kérdést hozzákapcsoljuk a kvízhez
+            max_order = QuizQuestion.objects.filter(quiz=quiz).aggregate(Max('order'))['order__max'] or 0
+            QuizQuestion.objects.create(quiz=quiz, question=question, order=max_order + 1)
+
+            messages.success(request, "Szöveges kérdés hozzáadva!")
+            return redirect("quiz:quiz_settings", quiz_id=quiz.id)
+    else:
+        form = TextQuestionForm()
+
+    return render(request, "quiz/add_text_question.html", {"form": form, "quiz": quiz})
 
 def home(request):
-    quizzes = Quiz.objects.all()
+    quizzes = get_accessible_quizzes_for_user(request.user)
     return render(request, 'quiz/home.html', {'quizzes': quizzes})
 
 
 @login_required()
 def user_home(request):
-    quizzes = Quiz.objects.all()
+    quizzes = get_accessible_quizzes_for_user(request.user)
     return render(request, 'quiz/user_home.html', {'quizzes': quizzes})
 
 
@@ -206,6 +273,33 @@ def play(request, quiz_id):
             raise Http404("Nincs ilyen kérdéskísérlet")
 
         question = attempted_question.question
+
+        # ... POST ágban, miután megvan: question = attempted_question.question
+
+# 🔴 ha szöveges kérdés
+        if question.correct_text_answer:
+            
+            user_text = request.POST.get('text_answer', '').strip()
+            correct_text = (question.correct_text_answer or '').strip()
+
+            # kisbetű-független összehasonlítás
+            is_correct = user_text.lower() == correct_text.lower()
+
+            attempted_question.text_answer = user_text
+            attempted_question.is_correct = is_correct
+            attempted_question.marks_obtained = question.maximum_marks if is_correct else 0
+            attempted_question.save(update_fields=['text_answer', 'is_correct', 'marks_obtained'])
+
+            # pontszám frissítés
+            quiz_profile.update_score()
+
+            if quiz.immediate_feedback:
+                request.session['quiz_paused'] = True
+                request.session['paused_remaining'] = remaining
+                return redirect('quiz:submission_result', attempted_question.pk)
+            else:
+                return redirect('quiz:play', quiz_id=quiz.id)
+
 
         if question.is_multiple_choice:
             choice_pks = request.POST.getlist('choices')
@@ -280,6 +374,44 @@ def quiz_settings_view(request, quiz_id):
         'all_groups': all_groups,
     })
 
+def get_accessible_quizzes_for_user(user):
+    """
+    Visszaadja azokat a kvízeket, amiket a user láthat/tölthet.
+    Logika:
+    - ha a kvízhez NINCS felhasználó és NINCS csoport hozzárendelve → mindenki láthatja
+    - ha VAN hozzárendelve user/csoport → csak az láthatja, aki érintett
+    - superuser mindent lát
+    """
+    from .models import Quiz  # hogy ne legyen körkörös import
+
+    if not user.is_authenticated:
+        # nem belépett user csak a nyitott kvízeket lássa
+        return Quiz.objects.filter(allowed_users__isnull=True, allowed_groups__isnull=True).distinct()
+
+    # belépett user
+    # nyitott kvízek
+    qs_open = Quiz.objects.filter(
+        allowed_users__isnull=True,
+        allowed_groups__isnull=True
+    )
+
+    # userre engedélyezett kvízek
+    qs_user = Quiz.objects.filter(
+        allowed_users=user
+    )
+
+    # csoportra engedélyezett kvízek
+    qs_group = Quiz.objects.filter(
+        allowed_groups__in=user.groups.all()
+    )
+
+    # ha superuser → mindent lát
+    if user.is_superuser:
+        return Quiz.objects.all().distinct()
+
+    # egyesítjük
+    return (qs_open | qs_user | qs_group).distinct()
+
 @login_required
 def quiz_results(request, quiz_id):
     quiz = get_object_or_404(Quiz, id=quiz_id)
@@ -304,15 +436,22 @@ def quiz_results(request, quiz_id):
 
 @login_required()
 def submission_result(request, attempted_question_pk):
-
+    from .models import Quiz  # ha még nincs fent
     attempted_question = get_object_or_404(AttemptedQuestion, pk=attempted_question_pk)
 
-    quiz = attempted_question.question.quizquestions.first().quiz
+    # 1) próbáljuk a sessionből kivenni, melyik kvízben volt a user
+    quiz_id = request.session.get('current_quiz_id')
+
+    if quiz_id:
+        quiz = get_object_or_404(Quiz, id=quiz_id)
+    else:
+        # 2) fallback: ha valamiért nincs sessionben, marad a régi logika
+        quiz = attempted_question.question.quizquestions.first().quiz
+
     context = {
         'attempted_question': attempted_question,
-        'quiz':quiz,
+        'quiz': quiz,
     }
-
     return render(request, 'quiz/submission_result.html', context)
 
 

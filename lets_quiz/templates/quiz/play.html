@@ -40,6 +40,11 @@
             </label>
           {% endfor %}
         </div>
+      {% elif question.correct_text_answer %}
+        <div class="form-group mt-3">
+          <label>Írd be a válaszod:</label>
+          <input type="text" name="text_answer" class="form-control" placeholder="Válasz...">
+        </div>
       {% else %}
         <div class="radio-input">
           {% for choice in question.choices.all %}

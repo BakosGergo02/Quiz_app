@@ -113,6 +113,10 @@ class Question(TimeStampedModel):
     maximum_marks = models.DecimalField(_('Maximum Pontszám'), default=4, decimal_places=2, max_digits=6)
 
     is_multiple_choice = models.BooleanField(default=False)
+    correct_text_answer = models.CharField(
+        max_length=255, blank=True, null=True,
+        help_text="Ha szöveges kérdés, ide írd a helyes választ."
+    )
 
     def __str__(self):
         return self.html[:50]
@@ -215,6 +219,9 @@ class AttemptedQuestion(TimeStampedModel):
     selected_choices = models.ManyToManyField(Choice, blank=True)
     is_correct = models.BooleanField(_('Was this attempt correct?'), default=False, null=False)
     marks_obtained = models.DecimalField(_('Marks Obtained'), default=0, decimal_places=2, max_digits=6)
+
+    text_answer = models.TextField(blank=True, null=True)
+    
     def __str__(self):
         return f"{self.quiz_profile.user.username} - {self.question.html[:50]}"
     def get_absolute_url(self):

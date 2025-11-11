@@ -14,7 +14,15 @@
       <!-- Válaszaid -->
       <div class="mb-3">
         <h5 class="text-muted">A te válaszod:</h5>
-        {% if attempted_question.selected_choices.all %}
+        {% if attempted_question.question.correct_text_answer %}
+          {% if attempted_question.text_answer %}
+            <div class="alert alert-secondary py-2 mb-2">
+              {{ attempted_question.text_answer }}
+            </div>
+          {% else %}
+            <p class="text-warning">Nem adtál meg választ.</p>
+          {% endif %}
+        {% elif attempted_question.selected_choices.all %}
           {% for choice in attempted_question.selected_choices.all %}
             <div class="alert alert-secondary py-2 mb-2">
               {{ choice.html|safe }}
@@ -28,23 +36,30 @@
       <!-- Helyes válaszok -->
       <div class="mb-4">
         <h5 class="text-muted">Helyes válasz(ok):</h5>
-        {% for choice in attempted_question.question.choices.all %}
-          {% if choice in attempted_question.selected_choices.all %}
-            {% if choice.is_correct %}
-              <div class="alert alert-success py-2 mb-2">
-                ✅ {{ choice.html|safe }} (helyes választás)
-              </div>
-            {% else %}
-              <div class="alert alert-danger py-2 mb-2">
-                ❌ {{ choice.html|safe }} (hibás választás)
+
+        {% if attempted_question.question.correct_text_answer %}
+          <div class="alert alert-info py-2 mb-2">
+            💡 {{ attempted_question.question.correct_text_answer }}
+          </div>
+        {% else %}
+          {% for choice in attempted_question.question.choices.all %}
+            {% if choice in attempted_question.selected_choices.all %}
+              {% if choice.is_correct %}
+                <div class="alert alert-success py-2 mb-2">
+                  ✅ {{ choice.html|safe }} (helyes választás)
+                </div>
+              {% else %}
+                <div class="alert alert-danger py-2 mb-2">
+                  ❌ {{ choice.html|safe }} (hibás választás)
+                </div>
+              {% endif %}
+            {% elif choice.is_correct %}
+              <div class="alert alert-info py-2 mb-2">
+                💡 {{ choice.html|safe }} (helyes válasz, amit nem jelöltél)
               </div>
             {% endif %}
-          {% elif choice.is_correct %}
-            <div class="alert alert-info py-2 mb-2">
-              💡 {{ choice.html|safe }} (helyes válasz, amit nem jelöltél)
-            </div>
-          {% endif %}
-        {% endfor %}
+          {% endfor %}
+        {% endif %}
       </div>
 
       <!-- Eredmény -->
