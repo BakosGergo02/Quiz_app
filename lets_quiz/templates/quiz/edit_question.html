@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+  <h2>Kérdés szerkesztése – "{{ quiz.title }}"</h2>
+  <form method="POST">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">Mentés</button>
+    <a href="{% url 'quiz:quiz_settings' quiz.id %}" class="btn btn-secondary">Mégse</a>
+  </form>
+</div>
+{% endblock %}

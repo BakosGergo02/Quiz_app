@@ -5,8 +5,8 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import Http404
-from .models import QuizProfile, Quiz, AttemptedQuestion, QuizQuestion, Choice
-from .forms import UserLoginForm, RegistrationForm, QuizCreateForm, SingleChoiceQuestionForm, MultipleChoiceQuestionForm, TextQuestionForm
+from .models import QuizProfile, Quiz, AttemptedQuestion, QuizQuestion, Choice, MatchingPair, AttemptedMatch,Question
+from .forms import UserLoginForm, RegistrationForm, QuizCreateForm, SingleChoiceQuestionForm, MultipleChoiceQuestionForm, TextQuestionForm, MatchingQuestionForm
 from django.db.models import Max
 from django.db import models
 
@@ -91,6 +91,8 @@ def select_question_type(request, quiz_id):
             return redirect('quiz:add_multiple_question', quiz_id=quiz.id)
         elif q_type == 'text':
             return redirect('quiz:add_text_question', quiz_id=quiz.id)
+        elif q_type == 'matching':
+            return redirect('quiz:add_matching_question', quiz_id=quiz.id)
         else:
             messages.error(request, "Ismeretlen kérdéstípus.")
     
@@ -206,6 +208,40 @@ def add_text_question(request, quiz_id):
 
     return render(request, "quiz/add_text_question.html", {"form": form, "quiz": quiz})
 
+@login_required
+def add_matching_question(request, quiz_id):
+    quiz = get_object_or_404(Quiz, id=quiz_id)
+
+    if request.method == "POST":
+        form = MatchingQuestionForm(request.POST)
+        if form.is_valid():
+            question = form.save(commit=False)
+            question.is_multiple_choice = False  # ez nem MC
+            question.save()
+
+            # párok létrehozása
+            for left, right in form.iter_pairs():
+                MatchingPair.objects.create(
+                    question=question,
+                    left_text=left,
+                    right_text=right
+                )
+
+            max_order = QuizQuestion.objects.filter(quiz=quiz).aggregate(Max('order'))['order__max'] or 0
+            QuizQuestion.objects.create(
+                quiz=quiz,
+                question=question,
+                order=max_order + 1
+            )
+
+            messages.success(request, "Párosító kérdés hozzáadva!")
+            return redirect("quiz:quiz_settings", quiz_id=quiz.id)
+    else:
+        form = MatchingQuestionForm()
+
+    return render(request, "quiz/add_matching_question.html", {"form": form, "quiz": quiz})
+
+
 def home(request):
     quizzes = get_accessible_quizzes_for_user(request.user)
     return render(request, 'quiz/home.html', {'quizzes': quizzes})
@@ -277,6 +313,51 @@ def play(request, quiz_id):
         # ... POST ágban, miután megvan: question = attempted_question.question
 
 # 🔴 ha szöveges kérdés
+        if question.matching_pairs.exists():
+            # előző sorok törlése, ha újrapróbálják
+            attempted_question.attempted_matches.all().delete()
+
+            total = question.matching_pairs.count()
+            correct_count = 0
+
+            for pair in question.matching_pairs.all():
+                # bal oldal azonosítója: pair.id
+                # a play.html hidden inputja: name="mapping_<left_id>"
+                right_id_str = request.POST.get('mapping_{}'.format(pair.id))
+                chosen = None
+                if right_id_str:
+                    try:
+                        chosen = MatchingPair.objects.get(pk=int(right_id_str), question=question)
+                    except (ValueError, MatchingPair.DoesNotExist):
+                        chosen = None
+
+                # sor mentése
+                AttemptedMatch.objects.create(
+                    attempted_question=attempted_question,
+                    left_pair=pair,
+                    chosen_right_pair=chosen
+                )
+
+                # helyes akkor, ha ugyanazt a párt választotta (jobb oldali id a bal pár id-jával egyezik a felületen)
+                if chosen and chosen.id == pair.id:
+                    correct_count += 1
+
+            ratio = (float(correct_count) / float(total)) if total > 0 else 0.0
+            attempted_question.is_correct = (correct_count == total and total > 0)
+            attempted_question.marks_obtained = round(float(question.maximum_marks) * ratio, 2)
+            # nincs választáslista / szöveges válasz ebben a típusban
+            attempted_question.text_answer = None
+            attempted_question.save(update_fields=['is_correct', 'marks_obtained', 'text_answer'])
+
+            quiz_profile.update_score()
+
+            if quiz.immediate_feedback:
+                request.session['quiz_paused'] = True
+                request.session['paused_remaining'] = remaining
+                return redirect('quiz:submission_result', attempted_question.pk)
+            else:
+                return redirect('quiz:play', quiz_id=quiz.id)
+
         if question.correct_text_answer:
             
             user_text = request.POST.get('text_answer', '').strip()
@@ -411,6 +492,165 @@ def get_accessible_quizzes_for_user(user):
 
     # egyesítjük
     return (qs_open | qs_user | qs_group).distinct()
+
+@login_required
+def edit_question(request, quiz_id, question_id):
+    quiz = get_object_or_404(Quiz, id=quiz_id)
+    # csak a kvízhez tartozó kérdés
+    question = get_object_or_404(
+        Question,
+        id=question_id,
+        quizquestions__quiz=quiz
+    )
+
+    # ---- KÉRDÉSTÍPUS MEGÁLLAPÍTÁSA ----
+    if question.matching_pairs.exists():
+        qtype = 'matching'
+    elif question.correct_text_answer:
+        qtype = 'text'
+    elif question.is_multiple_choice:
+        qtype = 'multiple'
+    else:
+        qtype = 'single'
+
+    # ---- POST: mentés ----
+    if request.method == 'POST':
+
+        # 1) MATCHING kérdés szerkesztése
+        if qtype == 'matching':
+            form = MatchingQuestionForm(request.POST)
+            if form.is_valid():
+                question.html = form.cleaned_data['html']
+                question.maximum_marks = form.cleaned_data['maximum_marks']
+                question.save()
+
+                # régi párok törlése, újak létrehozása
+                question.matching_pairs.all().delete()
+                for left, right in form.iter_pairs():
+                    MatchingPair.objects.create(
+                        question=question,
+                        left_text=left,
+                        right_text=right
+                    )
+
+                messages.success(request, "A párosító kérdés frissítve lett.")
+                return redirect('quiz:quiz_settings', quiz_id=quiz.id)
+
+        # 2) SZÖVEGES kérdés szerkesztése
+        elif qtype == 'text':
+            form = TextQuestionForm(request.POST)
+            if form.is_valid():
+                question.html = form.cleaned_data['html']
+                question.maximum_marks = form.cleaned_data['maximum_marks']
+                question.correct_text_answer = form.cleaned_data['correct_text_answer']
+                question.save()
+
+                messages.success(request, "A szöveges kérdés frissítve lett.")
+                return redirect('quiz:quiz_settings', quiz_id=quiz.id)
+
+        # 3) SINGLE / MULTIPLE CHOICE szerkesztése (eredeti logika kicsit rendezve)
+        else:
+            FormClass = MultipleChoiceQuestionForm if qtype == 'multiple' else SingleChoiceQuestionForm
+            form = FormClass(request.POST)
+            if form.is_valid():
+                question.html = form.cleaned_data['html']
+                question.maximum_marks = form.cleaned_data['maximum_marks']
+                question.save()
+
+                # régi choice-ok törlése
+                question.choices.all().delete()
+
+                options = [
+                    form.cleaned_data["option1"],
+                    form.cleaned_data["option2"],
+                    form.cleaned_data.get("option3"),
+                    form.cleaned_data.get("option4"),
+                ]
+
+                if qtype == 'multiple':
+                    correct_list = [
+                        int(i) for i in form.cleaned_data.get("correct_options") or []
+                    ]
+                    for index, opt_text in enumerate(options, start=1):
+                        if opt_text:
+                            Choice.objects.create(
+                                question=question,
+                                html=opt_text,
+                                is_correct=(index in correct_list)
+                            )
+                else:
+                    correct_index = int(form.cleaned_data["correct_option"])
+                    for index, opt_text in enumerate(options, start=1):
+                        if opt_text:
+                            Choice.objects.create(
+                                question=question,
+                                html=opt_text,
+                                is_correct=(index == correct_index)
+                            )
+
+                messages.success(request, "A feleletválasztós kérdés frissítve lett.")
+                return redirect('quiz:quiz_settings', quiz_id=quiz.id)
+
+    # ---- GET: űrlap előtöltése ----
+    else:
+        # 1) MATCHING
+        if qtype == 'matching':
+            initial = {
+                'html': question.html,
+                'maximum_marks': question.maximum_marks,
+            }
+            pairs = list(question.matching_pairs.all())
+            for idx, pair in enumerate(pairs, start=1):
+                if idx > 8:
+                    break
+                initial['pair{}_left'.format(idx)] = pair.left_text
+                initial['pair{}_right'.format(idx)] = pair.right_text
+
+            form = MatchingQuestionForm(initial=initial)
+
+        # 2) SZÖVEGES
+        elif qtype == 'text':
+            initial = {
+                'html': question.html,
+                'maximum_marks': question.maximum_marks,
+                'correct_text_answer': question.correct_text_answer or '',
+            }
+            form = TextQuestionForm(initial=initial)
+
+        # 3) SINGLE / MULTIPLE CHOICE
+        else:
+            FormClass = MultipleChoiceQuestionForm if qtype == 'multiple' else SingleChoiceQuestionForm
+            choices = list(question.choices.all())
+            initial = {
+                'html': question.html,
+                'maximum_marks': question.maximum_marks,
+            }
+
+            # opciók szövege
+            for idx, ch in enumerate(choices, start=1):
+                if idx > 4:
+                    break
+                initial['option{}'.format(idx)] = ch.html
+
+            # helyes(ek)
+            if qtype == 'multiple':
+                initial['correct_options'] = [
+                    str(idx) for idx, ch in enumerate(choices, start=1) if ch.is_correct
+                ]
+            else:
+                for idx, ch in enumerate(choices, start=1):
+                    if ch.is_correct:
+                        initial['correct_option'] = str(idx)
+                        break
+
+            form = FormClass(initial=initial)
+
+    return render(request, 'quiz/edit_question.html', {
+        'quiz': quiz,
+        'question': question,
+        'form': form,
+    })
+
 
 @login_required
 def quiz_results(request, quiz_id):

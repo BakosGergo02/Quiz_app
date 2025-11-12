@@ -12,6 +12,8 @@ class QuizSettingsForm(forms.Form):
     QUESTION_TYPES = (
         ('single', 'Egy választás (Single Choice)'),
         ('multiple', 'Több választás (Multiple Choice)'),
+        ('text', 'Szöveges válasz'),
+        ('matching', 'Párosítás (drag & drop)'),
         # később jön: ('text', 'Szöveges válasz'), ('dragdrop', 'Drag & Drop')
     )
 
@@ -96,6 +98,47 @@ class TextQuestionForm(forms.ModelForm):
         widgets = {
             'html': forms.Textarea(attrs={'rows': 3, 'cols': 80}),
         }
+
+class MatchingQuestionForm(forms.ModelForm):
+    # legfeljebb 8 pár – bővíthető igény szerint
+    pair1_left = forms.CharField(label="1. bal", max_length=255, required=True)
+    pair1_right = forms.CharField(label="1. jobb", max_length=255, required=True)
+
+    pair2_left = forms.CharField(label="2. bal", max_length=255, required=False)
+    pair2_right = forms.CharField(label="2. jobb", max_length=255, required=False)
+
+    pair3_left = forms.CharField(label="3. bal", max_length=255, required=False)
+    pair3_right = forms.CharField(label="3. jobb", max_length=255, required=False)
+
+    pair4_left = forms.CharField(label="4. bal", max_length=255, required=False)
+    pair4_right = forms.CharField(label="4. jobb", max_length=255, required=False)
+
+    pair5_left = forms.CharField(label="5. bal", max_length=255, required=False)
+    pair5_right = forms.CharField(label="5. jobb", max_length=255, required=False)
+
+    pair6_left = forms.CharField(label="6. bal", max_length=255, required=False)
+    pair6_right = forms.CharField(label="6. jobb", max_length=255, required=False)
+
+    pair7_left = forms.CharField(label="7. bal", max_length=255, required=False)
+    pair7_right = forms.CharField(label="7. jobb", max_length=255, required=False)
+
+    pair8_left = forms.CharField(label="8. bal", max_length=255, required=False)
+    pair8_right = forms.CharField(label="8. jobb", max_length=255, required=False)
+
+    class Meta:
+        model = Question
+        fields = ['html', 'maximum_marks']
+        widgets = {
+            'html': forms.Textarea(attrs={'rows': 3, 'cols': 80}),
+        }
+
+    def iter_pairs(self):
+        for i in range(1, 9):
+            l = self.cleaned_data.get('pair{}_left'.format(i))
+            r = self.cleaned_data.get('pair{}_right'.format(i))
+            if l and r:
+                yield l, r
+
 
 class ChoiceForm(forms.ModelForm):
     class Meta:

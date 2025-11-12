@@ -212,6 +212,21 @@ class QuizProfile(TimeStampedModel):
         self.total_score = total_score
         self.save(update_fields=['total_score'])
 
+class MatchingPair(models.Model):
+    question = models.ForeignKey(
+        Question,
+        related_name='matching_pairs',
+        on_delete=models.CASCADE
+    )
+    left_text = models.CharField(max_length=255)
+    right_text = models.CharField(max_length=255)
+
+    class Meta:
+        ordering = ['id']
+
+    def __str__(self):
+        return f"{self.left_text} ⇔ {self.right_text}"
+
 
 class AttemptedQuestion(TimeStampedModel):
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
@@ -224,5 +239,34 @@ class AttemptedQuestion(TimeStampedModel):
     
     def __str__(self):
         return f"{self.quiz_profile.user.username} - {self.question.html[:50]}"
+    
     def get_absolute_url(self):
         return f'/submission-result/{self.pk}/'
+    
+
+class AttemptedMatch(models.Model):
+    attempted_question = models.ForeignKey(
+        AttemptedQuestion,
+        related_name='attempted_matches',
+        on_delete=models.CASCADE
+    )
+    left_pair = models.ForeignKey(
+        MatchingPair,
+        related_name='+',
+        on_delete=models.CASCADE
+    )
+    chosen_right_pair = models.ForeignKey(
+        MatchingPair,
+        related_name='+',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+
+    class Meta:
+        unique_together = ('attempted_question', 'left_pair')
+
+    def __str__(self):
+        return f"{self.attempted_question_id} – {self.left_pair_id} -> {self.chosen_right_pair_id}"
+
+

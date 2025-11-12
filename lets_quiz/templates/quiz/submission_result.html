@@ -14,7 +14,29 @@
       <!-- Válaszaid -->
       <div class="mb-3">
         <h5 class="text-muted">A te válaszod:</h5>
-        {% if attempted_question.question.correct_text_answer %}
+        {% if attempted_question.question.matching_pairs.all %}
+          <ul class="list-unstyled">
+            {% for p in attempted_question.question.matching_pairs.all %}
+              {% for m in attempted_question.attempted_matches.all %}
+                {% if m.left_pair.id == p.id %}
+                  {% if m.chosen_right_pair and m.chosen_right_pair.id == p.id %}
+                    <li class="alert alert-success mb-2">✅ {{ p.left_text }} ⇔ {{ p.right_text }}</li>
+                  {% elif m.chosen_right_pair %}
+                    <li class="alert alert-danger mb-2">
+                      ❌ {{ p.left_text }} ⇔ {{ m.chosen_right_pair.right_text }}
+                      <small class="text-muted">(helyes: {{ p.right_text }})</small>
+                    </li>
+                  {% else %}
+                    <li class="alert alert-warning mb-2">
+                      ⚠️ {{ p.left_text }} ⇔ <em>nincs párosítás</em>
+                      <small class="text-muted">(helyes: {{ p.right_text }})</small>
+                    </li>
+                  {% endif %}
+                {% endif %}
+              {% endfor %}
+            {% endfor %}
+          </ul>
+        {% elif attempted_question.question.correct_text_answer %}
           {% if attempted_question.text_answer %}
             <div class="alert alert-secondary py-2 mb-2">
               {{ attempted_question.text_answer }}
@@ -36,8 +58,17 @@
       <!-- Helyes válaszok -->
       <div class="mb-4">
         <h5 class="text-muted">Helyes válasz(ok):</h5>
+        
+        {% if attempted_question.question.matching_pairs.all %}
+          <ul class="list-unstyled">
+            {% for p in attempted_question.question.matching_pairs.all %}
+              <li class="alert alert-info mb-2">
+                {{ p.left_text }} ⇔ {{ p.right_text }}
+              </li>
+            {% endfor %}
+          </ul>
 
-        {% if attempted_question.question.correct_text_answer %}
+        {% elif attempted_question.question.correct_text_answer %}
           <div class="alert alert-info py-2 mb-2">
             💡 {{ attempted_question.question.correct_text_answer }}
           </div>

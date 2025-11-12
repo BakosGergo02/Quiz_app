@@ -3,6 +3,8 @@
 
 {% load static %}
 <link rel="stylesheet" href="{% static 'css/main.css' %}">
+<script src="{% static 'js/quiz_matching.js' %}"></script>
+
 
 <div class="container py-5">
   {% if quiz.time_limit_seconds > 0 %}
@@ -30,7 +32,45 @@
         {{ question.html|safe }}
       </div>
 
-      {% if question.is_multiple_choice %}
+      {% if question.matching_pairs.all %}
+        <p><strong>Húzd rá a jobb oldali elemeket a megfelelő bal oldali párjukra!</strong></p>
+
+        <div class="row">
+          <!-- BAL OSZLOP: fix szövegek, ide húzunk -->
+          <div class="col-md-6">
+            {% for p in question.matching_pairs.all %}
+              <div class="mb-3 p-2 border rounded matching-drop"
+                  data-left-id="{{ p.id }}">
+                <strong>{{ p.left_text }}</strong>
+                <div class="mt-2 small text-muted">Ide húzd a párját →</div>
+
+                <!-- ide kerül vizuálisan a jobboldali elem -->
+                <div class="mt-2 matching-slot"></div>
+
+                <!-- hidden input a szervernek -->
+                <input type="hidden" name="mapping_{{ p.id }}" id="mapping_{{ p.id }}">
+              </div>
+            {% endfor %}
+          </div>
+
+          <!-- JOBB OSZLOP: ezek lesznek random sorrendben és húzhatók -->
+          <div class="col-md-6">
+            <p class="small text-muted">
+              Fogd meg a jobb oldali elemeket, és húzd a bal oldali szövegekhez.
+            </p>
+            <div id="matching-right-container">
+              {% for p in question.matching_pairs.all %}
+                <div class="mb-2 p-2 border rounded bg-light matching-right-item"
+                    draggable="true"
+                    data-right-id="{{ p.id }}">
+                  {{ p.right_text }}
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+      {% elif question.is_multiple_choice %}
         <p><strong>Több helyes válasz is lehetséges!</strong></p>
         <div class="checkbox-container">
           {% for choice in question.choices.all %}
