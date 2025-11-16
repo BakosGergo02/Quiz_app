@@ -28,6 +28,7 @@ urlpatterns = [
     url(r'^quizzes/user-groups/$', views.manage_user_groups, name='manage_user_groups'),
     url(r'^(?P<quiz_id>\d+)/add-matching-question/$', views.add_matching_question, name='add_matching_question'),
     url(r'^(?P<quiz_id>\d+)/question/(?P<question_id>\d+)/edit/$',views.edit_question,name='edit_question'),
+    url(r'^(?P<quiz_id>\d+)/question/(?P<question_id>\d+)/delete/$',views.delete_question,name='delete_question'),
 
     
 ]

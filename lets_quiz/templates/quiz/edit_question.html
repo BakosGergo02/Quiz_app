@@ -6,7 +6,18 @@
     {% csrf_token %}
     {{ form.as_p }}
     <button type="submit" class="btn btn-primary">Mentés</button>
+
     <a href="{% url 'quiz:quiz_settings' quiz.id %}" class="btn btn-secondary">Mégse</a>
+  </form>
+  <form method="post"
+        action="{% url 'quiz:delete_question' quiz.id question.id %}"
+        style="display:inline;">
+    {% csrf_token %}
+    <button type="submit"
+            class="btn btn-danger"
+            onclick="return confirm('Biztosan törlöd ezt a kérdést?');">
+      Kérdés törlése
+    </button>
   </form>
 </div>
 {% endblock %}

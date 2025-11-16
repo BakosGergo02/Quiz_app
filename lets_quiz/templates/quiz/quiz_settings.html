@@ -46,19 +46,31 @@
   </div>
 
   <h4>Kérdések</h4>
-  <ul class="list-unstyled">
-    {% for question in questions %}
-      <li class="mb-2">
-        {{ question.html|safe }}
-        <a href="{% url 'quiz:edit_question' quiz.id question.id %}"
-          class="btn btn-sm btn-outline-primary ml-2">
-          Szerkesztés
-        </a>
-      </li>
-    {% empty %}
-      <li>Még nincsenek kérdések hozzáadva.</li>
-    {% endfor %}
-  </ul>
+    <ul class="list-unstyled">
+      {% for question in questions %}
+        <li class="mb-2">
+          {{ question.html|safe }}
+
+          <a href="{% url 'quiz:edit_question' quiz.id question.id %}"
+            class="btn btn-sm btn-outline-primary ml-2">
+            Szerkesztés
+          </a>
+
+          <form method="post"
+                action="{% url 'quiz:delete_question' quiz.id question.id %}"
+                style="display:inline;">
+            {% csrf_token %}
+            <button type="submit"
+                    class="btn btn-sm btn-outline-danger ml-1"
+                    onclick="return confirm('Biztosan törlöd ezt a kérdést?');">
+              Törlés
+            </button>
+          </form>
+        </li>
+      {% empty %}
+        <li>Még nincsenek kérdések hozzáadva.</li>
+      {% endfor %}
+    </ul>
 
 
   <a href="{% url 'quiz:select_question_type' quiz.id %}" class="btn btn-success">

@@ -5,10 +5,12 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import Http404
-from .models import QuizProfile, Quiz, AttemptedQuestion, QuizQuestion, Choice, MatchingPair, AttemptedMatch,Question
+from .models import QuizProfile, Quiz, AttemptedQuestion, QuizQuestion, Choice, MatchingPair, AttemptedMatch
+from .models import Question
 from .forms import UserLoginForm, RegistrationForm, QuizCreateForm, SingleChoiceQuestionForm, MultipleChoiceQuestionForm, TextQuestionForm, MatchingQuestionForm
 from django.db.models import Max
 from django.db import models
+from django.contrib.auth.models import User, Group
 
 @login_required
 def create_quiz(request):
@@ -49,7 +51,7 @@ def quiz_list(request):
         'quizzes': quizzes,
     })
 
-from django.contrib.auth.models import User, Group
+
 
 @login_required
 def manage_user_groups(request):
@@ -651,6 +653,29 @@ def edit_question(request, quiz_id, question_id):
         'form': form,
     })
 
+@login_required
+def delete_question(request, quiz_id, question_id):
+    quiz = get_object_or_404(Quiz, id=quiz_id)
+
+    # csak a kvízhez tartozó kérdést engedjük törölni
+    question = get_object_or_404(
+        Question,
+        id=question_id,
+        quizquestions__quiz=quiz
+    )
+
+    if request.method == 'POST':
+        # A Question törlésével együtt törlődik:
+        # - a hozzá tartozó QuizQuestion (kapcsolat a kvízhez)
+        # - Choice-ok
+        # - MatchingPair-ek
+        # - AttemptedQuestion / AttemptedMatch rekordok (FK CASCADE miatt)
+        question.delete()
+        messages.success(request, "A kérdés sikeresen törölve lett.")
+    else:
+        messages.error(request, "A kérdés törléséhez POST kérés szükséges.")
+
+    return redirect('quiz:quiz_settings', quiz_id=quiz.id)
 
 @login_required
 def quiz_results(request, quiz_id):
