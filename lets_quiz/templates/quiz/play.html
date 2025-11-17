@@ -1,147 +1,179 @@
 {% extends 'base.html' %}
-{% block content %}
-
 {% load static %}
 <link rel="stylesheet" href="{% static 'css/main.css' %}">
-<script src="{% static 'js/quiz_matching.js' %}"></script>
-
+{% block content %}
 
 <div class="container py-5">
-  {% if quiz.time_limit_seconds > 0 %}
-  <div id="timer-box"
-      style="font-size: 22px; font-weight: bold; color: #4f78d9; margin-bottom: 20px;">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
 
-    Hátralévő idő:
-    <span
-        id="timer-display"
-        data-timeleft="{{ remaining_time }}"
-        data-endurl="{% url 'quiz:quiz_end' quiz.id %}">
-        {{ remaining_time }}
-    </span>
-  </div>
-
-  <script src="{% static 'js/quiz_timer.js' %}"></script>
-  {% endif %}
-  {% if question %}
-    <h2>Kérdés</h2>
-    <form method="POST" class="text-center">
-      {% csrf_token %}
-      <input type="hidden" name="question_pk" value="{{ question.pk }}">
-
-      <div class="question-text">
-        {{ question.html|safe }}
+      {% if quiz.time_limit_seconds > 0 %}
+      <div id="timer-box" class="timer-box mb-4 text-center">
+        <span class="timer-label">Hátralévő idő:</span>
+        <span
+          id="timer-display"
+          class="timer-display"
+          data-timeleft="{{ remaining_time }}"
+          data-endurl="{% url 'quiz:quiz_end' quiz.id %}">
+          {{ remaining_time }}
+        </span>
       </div>
 
-      {% if question.matching_pairs.all %}
-        <p><strong>Húzd rá a jobb oldali elemeket a megfelelő bal oldali párjukra!</strong></p>
+      <script src="{% static 'js/quiz_timer.js' %}"></script>
+      {% endif %}
 
-        <div class="row">
-          <!-- BAL OSZLOP: fix szövegek, ide húzunk -->
-          <div class="col-md-6">
-            {% for p in question.matching_pairs.all %}
-              <div class="mb-3 p-2 border rounded matching-drop"
-                  data-left-id="{{ p.id }}">
-                <strong>{{ p.left_text }}</strong>
-                <div class="mt-2 small text-muted">Ide húzd a párját →</div>
+      {% if question %}
+        <div class="card shadow-sm quiz-card">
+          <div class="card-body">
 
-                <!-- ide kerül vizuálisan a jobboldali elem -->
-                <div class="mt-2 matching-slot"></div>
+            <h2 class="h4 mb-4 text-center">Kérdés</h2>
 
-                <!-- hidden input a szervernek -->
-                <input type="hidden" name="mapping_{{ p.id }}" id="mapping_{{ p.id }}">
+            <form method="POST" class="quiz-form">
+              {% csrf_token %}
+              <input type="hidden" name="question_pk" value="{{ question.pk }}">
+
+              <div class="question-text mb-4">
+                {{ question.html|safe }}
               </div>
-            {% endfor %}
-          </div>
 
-          <!-- JOBB OSZLOP: ezek lesznek random sorrendben és húzhatók -->
-          <div class="col-md-6">
-            <p class="small text-muted">
-              Fogd meg a jobb oldali elemeket, és húzd a bal oldali szövegekhez.
-            </p>
-            <div id="matching-right-container">
-              {% for p in question.matching_pairs.all %}
-                <div class="mb-2 p-2 border rounded bg-light matching-right-item"
-                    draggable="true"
-                    data-right-id="{{ p.id }}">
-                  {{ p.right_text }}
+              {# --- PÁROSÍTÓ KÉRDÉS --- #}
+              {% if question.matching_pairs.all %}
+                <p class="text-center mb-3">
+                  <strong>Húzd rá a jobb oldali elemeket a megfelelő bal oldali párjukra!</strong>
+                </p>
+
+                <div class="row">
+                  <!-- BAL OSZLOP: fix szövegek, ide húzunk -->
+                  <div class="col-md-6 mb-3">
+                    {% for p in question.matching_pairs.all %}
+                      <div class="matching-drop mb-3"
+                           data-left-id="{{ p.id }}">
+                        <div class="matching-left-text">
+                          {{ p.left_text }}
+                        </div>
+                        <div class="matching-hint">
+                          Ide húzd a párját →
+                        </div>
+
+                        <!-- ide kerül vizuálisan a jobboldali elem -->
+                        <div class="matching-slot mt-2"></div>
+
+                        <!-- hidden input a szervernek -->
+                        <input type="hidden" name="mapping_{{ p.id }}" id="mapping_{{ p.id }}">
+                      </div>
+                    {% endfor %}
+                  </div>
+
+                  <!-- JOBB OSZLOP: ezek lesznek random sorrendben és húzhatók -->
+                  <div class="col-md-6 mb-3">
+                    <div class="matching-right-item card-shadow"
+                      draggable="true"
+                      data-right-id="{{ p.id }}">
+                      <div id="matching-right-container">
+                        {% for p in question.matching_pairs.all %}
+                          <div class="matching-right-item"
+                              draggable="true"
+                              data-right-id="{{ p.id }}">
+                            {{ p.right_text }}
+                          </div>
+                        {% endfor %}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              {% endfor %}
+
+              {# --- TÖBBVÁLASZOS (checkbox) --- #}
+              {% elif question.is_multiple_choice %}
+                <p class="text-center mb-3">
+                  <strong>Több helyes válasz is lehetséges!</strong>
+                </p>
+                <div class="checkbox-container">
+                  {% for choice in question.choices.all %}
+                    <label class="checkbox-label">
+                      <input type="checkbox" name="choices" value="{{ choice.pk }}">
+                      {{ choice.html|safe }}
+                    </label>
+                  {% endfor %}
+                </div>
+
+              {# --- SZÖVEGES VÁLASZ --- #}
+              {% elif question.correct_text_answer %}
+                <div class="form-group mt-3">
+                  <label class="font-weight-semibold">Írd be a válaszod:</label>
+                  <input type="text"
+                         name="text_answer"
+                         class="form-control"
+                         placeholder="Válasz...">
+                </div>
+
+              {# --- EGYVÁLASZOS (radio) --- #}
+              {% else %}
+                <div class="radio-input mt-2">
+                  {% for choice in question.choices.all %}
+                    <label class="label">
+                      <input type="radio" name="choice_pk" value="{{ choice.pk }}">
+                      <p class="text">{{ choice.html|safe }}</p>
+                    </label>
+                  {% endfor %}
+                </div>
+              {% endif %}
+
+              <button type="submit" class="mt-4">
+                Válasz elküldése
+              </button>
+            </form>
+
+          </div>
+        </div>
+
+      {% else %}
+        <div class="card shadow-sm text-center my-5">
+          <div class="card-body">
+            <h2 class="mb-3">Nincs több kérdés</h2>
+            <p class="text-muted mb-4">Ezt a kvízt már végigjátszottad.</p>
+
+            <a href="{% url 'quiz:leaderboard' %}" class="btn btn-lg btn-warning mt-2 ml-2">
+              <i class="fa fa-trophy" aria-hidden="true"></i> Nézd meg a ranglistát
+            </a>
+
+            <!-- Modal trigger -->
+            <button
+              type="button"
+              class="btn btn-lg btn-warning mt-3 ml-2"
+              data-toggle="modal"
+              data-target="#restartModal">
+              🔁 Kvíz újrakezdése
+            </button>
+          </div>
+        </div>
+
+        <!-- Modal -->
+        <div class="modal fade" id="restartModal" tabindex="-1" role="dialog" aria-labelledby="restartModalLabel" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+              <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="restartModalLabel">Kvíz újrakezdése</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Bezárás">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+              <div class="modal-body">
+                Biztosan újra szeretnéd kezdeni a kvízt?<br>
+                Az eddigi pontszámod <strong>nullázódni fog</strong>.
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Mégse</button>
+                <a href="{% url 'quiz:restart_quiz' quiz.id %}" class="btn btn-danger">Igen, kezdd újra</a>
+              </div>
             </div>
           </div>
         </div>
-
-      {% elif question.is_multiple_choice %}
-        <p><strong>Több helyes válasz is lehetséges!</strong></p>
-        <div class="checkbox-container">
-          {% for choice in question.choices.all %}
-            <label class="checkbox-label">
-              <input type="checkbox" name="choices" value="{{ choice.pk }}">
-              {{ choice.html|safe }}
-            </label>
-          {% endfor %}
-        </div>
-      {% elif question.correct_text_answer %}
-        <div class="form-group mt-3">
-          <label>Írd be a válaszod:</label>
-          <input type="text" name="text_answer" class="form-control" placeholder="Válasz...">
-        </div>
-      {% else %}
-        <div class="radio-input">
-          {% for choice in question.choices.all %}
-            <label class="label">
-              <input type="radio" name="choice_pk" value="{{ choice.pk }}">
-              <p class="text">{{ choice.html|safe }}</p>
-            </label>
-          {% endfor %}
-        </div>
       {% endif %}
 
-      <button type="submit">Válasz elküldése</button>
-    </form>
-
-  {% else %}
-  <div class="text-center my-5">
-    <h2>Nincs több kérdés</h2>
-
-    <a href="{% url 'quiz:leaderboard' %}" class="btn btn-lg btn-warning mt-3 ml-2">
-      <i class="fa fa-trophy" aria-hidden="true"></i> Nézd meg a ranglistát
-    </a>
-
-    <!-- Modal trigger -->
-    <button 
-      type="button" 
-      class="btn btn-lg btn-warning mt-3 ml-2"
-      style="cursor: pointer;"
-      data-toggle="modal" 
-      data-target="#restartModal">
-      🔁 Kvíz újrakezdése
-    </button>
-  </div>
-
-<!-- Modal -->
-  <div class="modal fade" id="restartModal" tabindex="-1" role="dialog" aria-labelledby="restartModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" role="document">
-      <div class="modal-content">
-        <div class="modal-header bg-warning text-dark">
-          <h5 class="modal-title" id="restartModalLabel">Kvíz újrakezdése</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Bezárás">
-            <span aria-hidden="true">&times;</span>
-          </button>
-        </div>
-        <div class="modal-body">
-          Biztosan újra szeretnéd kezdeni a kvízt?<br>
-          Az eddigi pontszámod <strong>nullázódni fog</strong>.
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-dismiss="modal">Mégse</button>
-          <a href="{% url 'quiz:restart_quiz' quiz.id %}" class="btn btn-danger">Igen, kezdd újra</a>
-        </div>
-      </div>
     </div>
   </div>
-
-{% endif %}
-
 </div>
+
+<script src="{% static 'js/quiz_matching.js' %}"></script>
 
 {% endblock %}

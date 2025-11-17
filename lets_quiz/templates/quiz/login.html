@@ -1,43 +1,79 @@
 {% extends 'base.html' %}
 {% load crispy_forms_tags %}
-{% block title %} Let's Quiz | {{ title }} {% endblock title %}
+{% block title %}Let's Quiz | {{ title }}{% endblock title %}
+
 {% block content %}
 {% if not request.user.is_active %}
 
-    <div class="jumbotron jumbotron-fluid">
-        <div class="container">
-          <div class="row">
-            <div class="col-12 col-sm-8 col-md-6 col-lg-4 offset-sm-2 offset-md-3 offset-lg-4">
-              <h1 class="mb-3 text-center">Bejelentkezés</h1>
-                <form method="POST" action="">
-                    {% csrf_token %}
-                    {{form|crispy}}
-                    <input type="submit" class="btn btn-info btn-block" value="{{ title }}"> 
-                </form>
-              <div class="text-center">
-                <p>or ...</p>
-                <a href="{% url 'quiz:register' %}" class="btn btn-success mb-3">Regisztráció</a>
-              </div>
-            </div>
+  <!-- NEM BEJELENTKEZETT FELHASZNÁLÓ – BEJELENTKEZÉS -->
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-lg-5 col-md-7">
+
+        <div class="quiz-card">
+          <h1 class="h4 mb-2 text-center">Bejelentkezés</h1>
+          <p class="text-muted text-center mb-4">
+            Lépj be, hogy elérd a kvízeket és az eredményeidet.
+          </p>
+
+          <form method="POST" action="">
+            {% csrf_token %}
+            {{ form|crispy }}
+
+            <button type="submit" class="btn btn-info btn-block mt-2">
+              {{ title }}
+            </button>
+          </form>
+
+          <div class="text-center mt-4">
+            <p class="mb-2">Még nincs fiókod?</p>
+            <a href="{% url 'quiz:register' %}" class="btn btn-success">
+              Regisztráció
+            </a>
           </div>
         </div>
+
       </div>
+    </div>
+  </div>
+
 {% else %}
 
-    <section id="section-jumbotron" class="jumbotron jumbotron-fluid d-flex justify-content-center align-items-center">
-      <div class="container text-center">
-        <h1 class="display-1 text-info">Let's Quiz</h1>
-        <p class="display-4 d-none d-sm-block">Test your skills and become a master.</p>
-        <p class="lead">We organize quizzes on various topics.</p>
-        {% for quiz in quizzes %}
-          <a href="{% url 'quiz:play' quiz.id %}" class="btn btn-lg btn-info mt-1">
-            {{ quiz.title }} kvíz kezdése
+  <!-- MÁR BEJELENTKEZETT FELHASZNÁLÓ -->
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+
+        <div class="quiz-card text-center">
+          <h1 class="h3 mb-2 text-info">Már be vagy jelentkezve 👋</h1>
+          <p class="text-muted mb-4">
+            Válassz egy kvízt az alábbiak közül, vagy nézd meg a ranglistát.
+          </p>
+
+          {% if quizzes %}
+            <div class="mb-3">
+              {% for quiz in quizzes %}
+                <div class="mb-2">
+                  <a href="{% url 'quiz:play' quiz.id %}" class="btn btn-info btn-lg mt-1">
+                    {{ quiz.title }} kvíz kezdése
+                  </a>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p class="text-muted mb-3">
+              Jelenleg nincs elérhető kvíz.
+            </p>
+          {% endif %}
+
+          <a href="{% url 'quiz:leaderboard' %}" class="btn btn-outline-secondary mt-2">
+            🏆 Ranglista megtekintése
           </a>
-        {% endfor %}
-        <a href="{% url 'quiz:leaderboard' %}" class="btn btn-lg btn-info mt-1">Leaderboard</a>
-      </div>  
-    </section>
+        </div>
+
+      </div>
+    </div>
+  </div>
 
 {% endif %}
-
 {% endblock content %}

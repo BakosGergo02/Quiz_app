@@ -1,82 +1,159 @@
 {% extends 'base.html' %}
+
+{% block title %}Let's Quiz | {{ quiz.title }} – Beállítások{% endblock title %}
+
 {% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-10">
 
-<div class="container mt-5">
-  <h2>{{ quiz.title }} – Beállítások</h2>
-  <p>{{ quiz.description }}</p>
+      <!-- Alap adatok kártya -->
+      <div class="card shadow-lg border-0 rounded-3 quiz-card mb-4">
+        <div class="card-body">
+          <h2 class="h4 mb-2">{{ quiz.title }} – Beállítások</h2>
+          {% if quiz.description %}
+            <p class="text-muted mb-3">{{ quiz.description }}</p>
+          {% endif %}
 
-  <ul>
-    <li><b>Időkorlát:</b> {{ quiz.time_limit_seconds }} mp</li>
-    <li><b>Azonnali visszajelzés:</b> {{ quiz.immediate_feedback|yesno:"Igen,Nem" }}</li>
-    <li><b>Többször kitölthető:</b> {{ quiz.allow_multiple_attempts|yesno:"Igen,Nem" }}</li>
-  </ul>
-
-  <hr>
-  <div class="mt-4 mb-4">
-    <h4>Hozzáférés beállítása</h4>
-    <form method="post">
-      {% csrf_token %}
-
-      <div class="form-group">
-        <label>Engedélyezett felhasználók (Diákok):</label>
-        <select name="allowed_users" multiple class="form-control" size="6">
-          {% for user in all_users %}
-            <option value="{{ user.id }}" {% if user in quiz.allowed_users.all %}selected{% endif %}>
-              {{ user.username }}
-            </option>
-          {% endfor %}
-        </select>
-        <small class="form-text text-muted">Tartsd lenyomva a Ctrl-t több csoport kijelöléséhez vagy a kijelölés visszavonásához.</small>
+          <ul class="list-unstyled mb-0">
+            <li class="mb-1">
+              <strong>Időkorlát:</strong>
+              {% if quiz.time_limit_seconds > 0 %}
+                {{ quiz.time_limit_seconds }} mp
+              {% else %}
+                Nincs időkorlát
+              {% endif %}
+            </li>
+            <li class="mb-1">
+              <strong>Azonnali visszajelzés:</strong>
+              {{ quiz.immediate_feedback|yesno:"Igen,Nem" }}
+            </li>
+            <li class="mb-1">
+              <strong>Többször kitölthető:</strong>
+              {{ quiz.allow_multiple_attempts|yesno:"Igen,Nem" }}
+            </li>
+            <li class="mb-1">
+              <strong>Állapot:</strong>
+              {% if quiz.is_published %}
+                <span class="badge badge-success">Publikálva</span>
+              {% else %}
+                <span class="badge badge-secondary">Piszkozat</span>
+              {% endif %}
+            </li>
+          </ul>
+        </div>
       </div>
 
-      <div class="form-group mt-3">
-        <label>Engedélyezett csoportok:</label>
-        <select name="allowed_groups" multiple class="form-control" size="5">
-          {% for group in all_groups %}
-            <option value="{{ group.id }}" {% if group in quiz.allowed_groups.all %}selected{% endif %}>
-              {{ group.name }}
-            </option>
-          {% endfor %}
-        </select>
-        <small class="form-text text-muted">Tartsd lenyomva a Ctrl-t több csoport kijelöléséhez vagy a kijelölés visszavonásához.</small>
-      </div>
+      <!-- Hozzáférés beállítása -->
+      <div class="card shadow-sm border-0 rounded-3 mb-4">
+        <div class="card-body">
+          <h3 class="h5 mb-3">Hozzáférés beállítása</h3>
+          <p class="text-muted">
+            Válaszd ki, mely felhasználók és csoportok tölthetik ki ezt a kvízt.
+          </p>
 
-      <button type="submit" class="btn btn-primary mt-3">Hozzáférés mentése</button>
-    </form>
-  </div>
-
-  <h4>Kérdések</h4>
-    <ul class="list-unstyled">
-      {% for question in questions %}
-        <li class="mb-2">
-          {{ question.html|safe }}
-
-          <a href="{% url 'quiz:edit_question' quiz.id question.id %}"
-            class="btn btn-sm btn-outline-primary ml-2">
-            Szerkesztés
-          </a>
-
-          <form method="post"
-                action="{% url 'quiz:delete_question' quiz.id question.id %}"
-                style="display:inline;">
+          <form method="post">
             {% csrf_token %}
-            <button type="submit"
-                    class="btn btn-sm btn-outline-danger ml-1"
-                    onclick="return confirm('Biztosan törlöd ezt a kérdést?');">
-              Törlés
+
+            <div class="row">
+              <!-- Felhasználók -->
+              <div class="col-md-6 mb-3">
+                <label for="id_allowed_users"><strong>Engedélyezett felhasználók</strong></label>
+                <select id="id_allowed_users"
+                        name="allowed_users"
+                        class="form-control"
+                        multiple
+                        size="8">
+                  {% for user in all_users %}
+                    <option value="{{ user.id }}"
+                      {% if user in quiz.allowed_users.all %}selected{% endif %}>
+                      {{ user.username }}
+                    </option>
+                  {% endfor %}
+                </select>
+                <small class="form-text text-muted">
+                  Több elem kijelöléséhez tartsd lenyomva a Ctrl (Cmd) gombot.
+                </small>
+              </div>
+
+              <!-- Csoportok -->
+              <div class="col-md-6 mb-3">
+                <label for="id_allowed_groups"><strong>Engedélyezett csoportok</strong></label>
+                <select id="id_allowed_groups"
+                        name="allowed_groups"
+                        class="form-control"
+                        multiple
+                        size="8">
+                  {% for group in all_groups %}
+                    <option value="{{ group.id }}"
+                      {% if group in quiz.allowed_groups.all %}selected{% endif %}>
+                      {{ group.name }}
+                    </option>
+                  {% endfor %}
+                </select>
+                <small class="form-text text-muted">
+                  Ha nem jelölsz ki semmit, alapértelmezetten senki (vagy csak a szerkesztők) férnek hozzá.
+                </small>
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-info btn-continue mt-2">
+              Hozzáférés mentése
             </button>
           </form>
-        </li>
-      {% empty %}
-        <li>Még nincsenek kérdések hozzáadva.</li>
-      {% endfor %}
-    </ul>
+        </div>
+      </div>
+
+      <!-- Kérdések listája -->
+      <div class="card shadow-sm border-0 rounded-3 mb-4">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 class="h5 mb-0">Kérdések</h3>
+            <a href="{% url 'quiz:select_question_type' quiz.id %}" class="btn btn-success">
+              + Kérdés hozzáadása
+            </a>
+          </div>
+
+          {% if questions %}
+            <ul class="list-unstyled mb-0">
+              {% for question in questions %}
+                <li class="mb-3 p-3 border rounded question-settings-item">
+                  <div class="mb-2">
+                    {{ question.html|safe }}
+                  </div>
+
+                  <div class="question-actions">
+
+                    <a href="{% url 'quiz:edit_question' quiz.id question.id %}"
+                      class="btn-question-edit">
+                      Szerkesztés
+                    </a>
+                    <form method="post"
+                          action="{% url 'quiz:delete_question' quiz.id question.id %}"
+                          class="d-inline">
+                      {% csrf_token %}
+                      <button type="submit"
+                              class="btn-question-delete"
+                              onclick="return confirm('Biztosan törlöd ezt a kérdést?');">
+                        Törlés
+                      </button>
+                    </form>
 
 
-  <a href="{% url 'quiz:select_question_type' quiz.id %}" class="btn btn-success">
-    + Kérdés hozzáadása
-  </a>
+                  </div>
 
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="text-muted mb-0">
+              Még nincsenek kérdések hozzáadva ehhez a kvízhez.
+            </p>
+          {% endif %}
+        </div>
+      </div>
+
+    </div>
+  </div>
 </div>
-
 {% endblock %}

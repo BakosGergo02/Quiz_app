@@ -211,10 +211,22 @@ class QuizCreateForm(forms.ModelForm):
 
 
 class UserLoginForm(forms.Form):
-    username = forms.CharField()
-    password = forms.CharField(widget=forms.PasswordInput)
+    username = forms.CharField(
+        label="Felhasználónév",
+        
+        widget=forms.TextInput(attrs={
+            'placeholder': 'Felhasználónév'
+        })
+    )
+    password = forms.CharField(
+        label="Jelszó",
+        widget=forms.PasswordInput(attrs={
+            'placeholder': 'Jelszó'
+        })
+    )
 
     def clean(self, *args, **kwargs):
+        # ITT MARAD a MEZŐ NEVE, NEM a felirat!
         username = self.cleaned_data.get("username")
         password = self.cleaned_data.get("password")
 
@@ -230,9 +242,50 @@ class UserLoginForm(forms.Form):
 
 
 class RegistrationForm(UserCreationForm):
-    email = forms.EmailField(required=True)
-    first_name = forms.CharField(required=True)
-    last_name = forms.CharField(required=True)
+    email = forms.EmailField(
+        required=True,
+        label="E-mail cím",
+        widget=forms.EmailInput(attrs={
+            'placeholder': 'E-mail cím'
+        })
+    )
+
+    first_name = forms.CharField(
+        required=True,
+        label="Keresztnév",
+        widget=forms.TextInput(attrs={
+            'placeholder': 'Keresztnév'
+        })
+    )
+
+    last_name = forms.CharField(
+        required=True,
+        label="Vezetéknév",
+        widget=forms.TextInput(attrs={
+            'placeholder': 'Vezetéknév'
+        })
+    )
+
+    # UserCreationForm automatikus mezői (password1, password2)
+    password1 = forms.CharField(
+    label="Jelszó",
+    widget=forms.PasswordInput(attrs={'placeholder': 'Jelszó'}),
+    help_text=(
+        "<ul class='text-muted small'>"
+        "<li>A jelszónak legalább 8 karakterből kell állnia.</li>"
+        "<li>Nem lehet túl hasonló a személyes adataidhoz.</li>"
+        "<li>Nem lehet túl gyakori jelszó.</li>"
+        "<li>Nem lehet csak számokból álló jelszó.</li>"
+        "</ul>"
+        )
+    )
+
+    password2 = forms.CharField(
+        label="Jelszó megerősítése",
+        widget=forms.PasswordInput(attrs={
+            'placeholder': 'Jelszó megerősítése'
+        })
+    )
 
     class Meta:
         model = User
@@ -244,6 +297,18 @@ class RegistrationForm(UserCreationForm):
             'password1',
             'password2',
         ]
+        labels = {
+            'username': 'Felhasználónév',
+        }
+        help_texts = {
+            'username' : 'Kötelező mező. Maximum 150 karakter. Betűk, számok és a következő karakterek engedélyezettek: @ . + - _',
+            #'password1' : 'A jelszónak legalább 8 karakterből kell állnia. Nem lehet túl hasonló a személyes adataidhoz. Nem lehet túl gyakori jelszó. Nem lehet csak számokból álló jelszó',
+        }
+        widgets = {
+            'username': forms.TextInput(attrs={
+                'placeholder': 'Felhasználónév'
+            }),
+        }
 
     def save(self, commit=True):
         user = super(RegistrationForm, self).save(commit=False)

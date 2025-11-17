@@ -27,7 +27,7 @@
 
     <section id="section-jumbotron" class="jumbotron jumbotron-fluid d-flex justify-content-center align-items-center">
       <div class="container text-center">
-        <h1 class="display-1 text-info">Let's Quiz</h1>
+        <h1 class="display-1 text-info">Quiz app</h1>
         <p class="display-4 d-none d-sm-block">Test your skills and become a master.</p>
         <p class="lead">We organize quizzes on various topics.</p>
         {% for quiz in quizzes %}
@@ -35,7 +35,7 @@
             {{ quiz.title }} kvíz kezdése
           </a>
         {% endfor %}
-        <a href="{% url 'quiz:leaderboard' %}" class="btn btn-lg btn-info mt-1">Leaderboard</a>
+        <a href="{% url 'quiz:leaderboard' %}" class="btn btn-lg btn-info mt-1">Ranglista</a>
       </div>  
     </section>
 

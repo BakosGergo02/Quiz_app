@@ -5,17 +5,19 @@ body {
 }
 
 
-label, p, h1, h2, h3, h4, h5, h6, span, strong, .text, .question-text {
-  color: #1f2937 !important;
+.alert,
+.checkbox-label,
+.radio-input {
+  color: #1f2937;
 }
-
 /* === Kérdésdoboz === */
 .question-text {
   background: #ffffff;
   border: 2px solid #e5e7eb;
+  border-color: #c7d2fe;
   border-radius: 16px;
   padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.08);
   margin-bottom: 1.5rem;
   font-size: 1.1rem;
   text-align: center;
@@ -70,6 +72,8 @@ label, p, h1, h2, h3, h4, h5, h6, span, strong, .text, .question-text {
 }
 
 /* === Checkbox dizájn (Uiverse: good-wasp) === */
+/* === Checkbox (multiple choice) egységes dizájn === */
+
 .checkbox-container {
   display: flex;
   flex-direction: column;
@@ -93,36 +97,37 @@ label, p, h1, h2, h3, h4, h5, h6, span, strong, .text, .question-text {
 }
 
 .checkbox-label:hover {
-  background-color: #f9fafb;
-  border-color: #fbbf24;
+  background-color: #f3f4f6;
+  border-color: #6366f1;
 }
 
+/* maga a checkbox – ugyanaz a lila, mint a rádiónál */
 .checkbox-label input[type="checkbox"] {
   appearance: none;
-  width: 20px;
-  height: 20px;
-  border: 2px solid #9ca3af;
+  width: 18px;
+  height: 18px;
   border-radius: 6px;
+  border: 2px solid #9ca3af;
   position: relative;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   background: #fff;
 }
 
 .checkbox-label input[type="checkbox"]:checked {
-  border-color: #fbbf24;
-  background-color: #fffbeb;
-  box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.2);
+  border-color: #6366f1;
+  background-color: #6366f1;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
 }
 
+/* pipa a közepén */
 .checkbox-label input[type="checkbox"]:checked::after {
   content: "✔";
   position: absolute;
-  font-size: 14px;
-  color: #d97706;
-  left: 4px;
-  top: 0px;
+  font-size: 12px;
+  color: #ffffff;
+  left: 3px;
+  top: -1px;
 }
-
 /* === Gomb === */
 button[type="submit"] {
   display: block;
@@ -144,13 +149,13 @@ button[type="submit"]:hover {
 }
 
 .btn-warning {
-  background-color: #facc15;
+  background-color: #4f46e5;
   border: none;
-  color: #1f2937;
+  color: #ffffff;
   font-weight: 600;
   border-radius: 12px;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 6px rgba(251, 191, 36, 0.3);
+  box-shadow: 0 2px 6px #c4b5fd(251, 191, 36, 0.3);
 }
 
 .btn-warning:hover {
@@ -163,3 +168,402 @@ button,
 .btn {
   cursor: pointer !important;
 }
+
+.btn-continue,
+.btn-info {
+  background-color: #6366f1 !important;
+  border: none !important;
+  color: #fff !important;
+  padding: 12px 26px !important;
+  border-radius: 12px !important;
+  font-size: 1.05rem !important;
+  font-weight: 600 !important;
+  box-shadow: 0 2px 6px rgba(99, 102, 241, 0.3) !important;
+  transition: all 0.3s ease !important;
+}
+
+.btn-continue:hover,
+.btn-info:hover {
+  background-color: #4f46e5 !important;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.5) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* ===== Kvíz újrakezdése gomb – nem sárga, hanem "veszélyes" stílus ===== */
+.btn-restart {
+  border-radius: 12px !important;
+  border: 2px solid #ef4444 !important;
+  background: #fef2f2 !important;
+  color: #b91c1c !important;
+  font-weight: 600 !important;
+  padding: 12px 24px !important;
+  transition: all 0.2s ease !important;
+}
+
+.btn-restart:hover {
+  background: #ef4444 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 10px rgba(239, 68, 68, 0.4) !important;
+}
+
+/* ===== Modal fejléc – ne legyen sárga ===== */
+.modal-header-restart {
+  background: #fef2f2 !important;      /* halvány piros */
+  border-bottom: 1px solid #fecaca !important;
+}
+
+.modal-header-restart .modal-title {
+  color: #b91c1c !important;
+  font-weight: 600;
+}
+/* === Kvíz kártya === */
+.quiz-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 32px 36px;       /* <<< nagyobb belső tér */
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+  border: 1px solid #e5e7eb;
+}
+
+/* === Timer === */
+.timer-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #1d4ed8;
+}
+
+.timer-label {
+  margin-right: 8px;
+}
+
+.timer-display {
+  padding: 4px 14px;
+  border-radius: 12px;
+  background: #4f46e5;        /* lila */
+  color: #fff !important;     /* fehér szám */
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+/* === Matching kérdések – bal oldal === */
+.matching-drop {
+  background: #ffffff;
+  border: 2px dashed #c4b5fd; /* halvány lila */
+  border-radius: 16px;
+  padding: 16px 14px;
+  min-height: 95px;
+  position: relative;
+  transition: all 0.25s ease;
+}
+
+.matching-drop:hover {
+  background: #faf5ff;
+  border-color: #a78bfa;
+  box-shadow: 0 4px 12px rgba(167, 139, 250, 0.25);
+}
+
+.matching-left-text {
+  font-weight: 700;
+  color: #4c1d95;
+  font-size: 1rem;
+  margin-bottom: 8px;
+}
+
+.matching-hint {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  font-style: italic;
+}
+
+.matching-slot {
+  min-height: 34px;
+  margin-top: 8px;
+  padding: 4px;
+}
+
+/* === Matching – jobb oldal (draggable kártyák) === */
+#matching-right-container {
+  background: #faf5ff;
+  border-radius: 16px;
+  padding: 12px;
+  border: 1px solid #e9d5ff;
+  min-height: 100px;
+}
+
+.matching-right-item {
+  margin-bottom: 10px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  border: 2px solid #e5e7eb;
+  background: #ffffff;
+  cursor: grab;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+}
+
+.matching-right-item:hover {
+  background: #f5f3ff;
+  border-color: #a78bfa;
+  box-shadow: 0 3px 10px rgba(167, 139, 250, 0.20);
+  transform: translateY(-2px);
+}
+
+.matching-right-item:active {
+  cursor: grabbing;
+  transform: scale(1.03);
+}
+
+/* Sikeresen párosított elem – JS bg-success */
+.matching-right-item.bg-success {
+  background: #ede9fe !important;
+  border-color: #7c3aed !important;
+  box-shadow: 0 3px 10px rgba(124, 58, 237, 0.3);
+}
+/* A JS-ben már létezik bg-success class használat, ezt finomítjuk */
+.matching-right-item.bg-success {
+  background: #ede9fe !important;
+  border-color: #7c3aed !important;
+  box-shadow: 0 3px 10px rgba(124, 58, 237, 0.3);
+}
+
+/* Slot, ahová a jobb elemet húzzuk */
+.matching-slot {
+  min-height: 34px;
+  margin-top: 8px;
+  padding: 4px;
+}
+
+/* Kis extra formázás a szöveges kérdéshez */
+.font-weight-semibold {
+  font-weight: 600;
+}
+
+/* Form, gombok környezetben */
+.quiz-form {
+  margin-top: 0.5rem;
+}
+
+.alert {
+  border-radius: 14px !important;
+  padding: 14px 18px !important;
+  font-size: 1rem !important;
+  border-width: 2px !important;
+}
+
+/* Helyes választ jelölő (zöld helyett lila) */
+.alert-success {
+  background: #eef2ff !important;     /* világos lila */
+  border-color: #6366f1 !important;   /* lila keret */
+  color: #4f46e5 !important;          /* lila szöveg */
+  font-weight: 600;
+}
+
+/* Hibás választ jelölő */
+.alert-danger {
+  background: #fef2f2 !important;
+  border-color: #ef4444 !important;
+  color: #b91c1c !important;
+  font-weight: 600;
+}
+
+/* „Helyes válasz, amit nem jelöltél” */
+.alert-info {
+  background: #faf5ff !important;
+  border-color: #a78bfa !important;
+  color: #4c1d95 !important;
+  font-weight: 600;
+}
+
+/* Semleges doboz (pl. saját választ mutató szürke) */
+.alert-secondary {
+  background: #f3f4f6;
+  border-color: #e5e7eb;
+  color: #1f2937;
+}
+
+.correct-answer .alert-success {
+  background: #dcfce7 !important;    /* halvány zöld */
+  border-color: #16a34a !important;  /* zöld keret */
+  color: #166534 !important;         /* sötétzöld szöveg */
+}
+
+/* A felirat ("Helyes válasz! +X pont") legyen zöld */
+.correct-answer .result-title,
+.correct-answer .alert-correct {
+  background: #bbf7d0 !important;
+  border: 2px solid #16a34a !important;
+  color: #166534 !important;
+  font-weight: 700;
+}
+
+/* ===== Ranglista kártya ===== */
+/* Ranglista cím badge */
+.leaderboard-title-badge {
+  background-color: #6366f1 !important;
+  color: #ffffff !important;
+  border-radius: 999px;
+  font-size: 1.1rem;
+}
+
+/* Táblázat fejléce */
+.leaderboard-table thead tr {
+  background: #eef2ff;
+}
+
+.leaderboard-table thead th {
+  border-bottom: 2px solid #c7d2fe;
+  font-weight: 600;
+  color: #4b5563;
+}
+
+/* Alap sorok */
+.leaderboard-table tbody tr {
+  transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+}
+
+.leaderboard-table tbody tr:hover {
+  background: #f9fafb;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
+}
+
+/* TOP 3 kiemelés */
+.leaderboard-row-1 {
+  background: #fef9c3;
+  font-weight: 700;
+}
+
+.leaderboard-row-2 {
+  background: #e5e7eb;
+  font-weight: 600;
+}
+
+.leaderboard-row-3 {
+  background: #fee2e2;
+  font-weight: 600;
+}
+
+.leaderboard-row-1:hover {
+  background: #fef9c3;
+}
+
+.leaderboard-row-2:hover {
+  background: #e5e7eb;
+}
+
+.leaderboard-row-3:hover {
+  background: #fee2e2;
+}
+
+.quiz-list-table thead tr {
+  background: #eef2ff;
+}
+
+.quiz-list-table thead th {
+  border-bottom: 2px solid #c7d2fe;
+  font-weight: 600;
+  color: #4b5563;
+}
+
+.quiz-list-table tbody tr {
+  transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+}
+
+.quiz-list-table tbody tr:hover {
+  background: #f9fafb;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
+}
+
+/* Beállítások oldali kérdéskártya */
+.question-settings-item {
+  background: #ffffff;
+  transition: box-shadow 0.2s ease, transform 0.1s ease;
+}
+
+.question-settings-item:hover {
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+  transform: translateY(-1px);
+}
+
+
+/* ===== Kérdés gombok konténer ===== */
+.question-actions {
+  text-align: right !important;
+  margin-top: 8px !important;
+  white-space: nowrap !important;
+}
+
+/* ===== Kisebb admin Szerkesztés gomb (lila) ===== */
+.btn-question-edit {
+  display: inline-block !important;
+  padding: 6px 14px !important;
+  background-color: #6366f1 !important;
+  color: white !important;
+  border-radius: 8px !important;
+  font-size: 0.9rem !important;
+  font-weight: 600 !important;
+  min-width: 90px !important;
+  height: 34px !important;
+  margin-left: 8px !important;
+  cursor: pointer !important;
+  border: none !important;
+  transition: .2s !important;
+}
+
+.btn-question-edit:hover {
+  background-color: #4f46e5 !important;
+  transform: translateY(-1px) !important;
+}
+
+/* ===== Kisebb admin Törlés gomb (piros) ===== */
+.btn-question-delete {
+  display: inline-block !important;
+  padding: 6px 14px !important;
+  background-color: #fef2f2 !important;
+  border: 2px solid #ef4444 !important;
+  color: #b91c1c !important;
+  border-radius: 8px !important;
+  font-size: 0.9rem !important;
+  font-weight: 600 !important;
+  min-width: 90px !important;
+  height: 34px !important;
+  cursor: pointer !important;
+  transition: .2s !important;
+}
+
+.btn-question-delete:hover {
+  background-color: #ef4444 !important;
+  color: white !important;
+  transform: translateY(-1px) !important;
+}
+
+/* ===== NAVBAR KIJELENTKEZÉS GOMB (PIROS) ===== */
+/* ==== NAVBAR KIJELENTKEZÉS GOMB - PIROS, KERETTEL ==== */
+
+.btn.btn-logout-nav {
+  background-color: #ef4444 !important;        /* PIROS háttér */
+  color: #ffffff !important;                   /* fehér ikon + szöveg */
+  border: none !important;
+  padding: 8px 18px !important;
+  border-radius: 10px !important;
+  font-weight: 600 !important;
+  font-size: 0.90rem !important;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4) !important;   /* PIROS árnyék */
+  transition: all 0.2s ease !important;
+}
+
+/* Hover */
+.btn.btn-logout-nav:hover {
+  background-color: #dc2626 !important;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.55) !important;
+  transform: translateY(-1px) !important;
+}
+

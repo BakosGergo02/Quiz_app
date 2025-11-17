@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
     <link href="https://fonts.googleapis.com/css?family=Open+Sans|Rubik" rel="stylesheet">
 
-    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    <link rel="stylesheet" href="{% static 'css/main.css' %}?v=20251116">
     {% block css %}
     {% endblock css %}
 
@@ -23,21 +23,21 @@
     <nav class="navbar navbar-expand-md navbar-dark bg-dark">
         <div class="container">
             <h1><a href="{% url 'quiz:home' %}" class="navbar-brand">
-            <strong>Debreceni Egyetem Quiz App</strong></a></h1>
+            <strong>Quiz App</strong></a></h1>
             <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
             <div class="collapse navbar-collapse justify-content-end " id="navbar">
                 {% if not request.user.is_active %}
                 <a href="{% url 'quiz:leaderboard' %}" class="btn btn-info mt-1 mx-1">Ranglista</a>
                 <a href="{% url 'quiz:login' %}" class="btn btn-info mt-1"><i class="fa fa-sign-in" aria-hidden="true"></i> Bejelentkezés</a>
                 {% else %}
-                <h6 class="text-white mt-2 mr-2">Üdv! {{ request.user.username }} | </h6>
-                <h6 class="text-white mt-2 mr-2"><a href="{% url 'quiz:leaderboard' %}" class="text-white">Ranglista</a> |</h6>
+                <h6 class="text-white mt-2 mr-2">Üdv! {{ request.user.username }}  </h6>
+                <a href="{% url 'quiz:leaderboard' %}" class="btn btn-info mt-1 mx-1">Ranglista</a>
                 {% if request.user.is_superuser %}
                     <a href="{% url 'quiz:quiz_list' %}" class="btn btn-info mt-1 mx-1">Kvíz beállítások</a>
                 {% elif request.user.groups.all.0.name == 'Tanár' %}
                     <a href="{% url 'quiz:quiz_list' %}" class="btn btn-info mt-1 mx-1">Kvíz beállítások</a>
                 {% endif %}
-                <a href="{% url 'quiz:logout' %}" class="btn btn-danger mt-1 mx-1">Kijelentkezés <i class="fa fa-sign-out" aria-hidden="true"></i></a>
+                <a href="{% url 'quiz:logout' %}" class="btn btn-logout-nav ml-2">Kijelentkezés <i class="fa fa-sign-out" aria-hidden="true"></i></a>
                 {% endif %}
             </div>
         </div>
@@ -46,14 +46,6 @@
 
     {% block content %}
     {% endblock content %}
-    <footer class="bg-blue text-muted py-0">
-        <div class="container py-4">
-            <ul class="list-inline mb-0 text-center">
-                <li class="list-inline-item">&copy; 2018 Let's Quiz.</li>
-                <li class="list-inline-item">All rights reserved.</li>
-            </ul>
-        </div>
-    </footer>
     <!-- jQuery first, then Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.3/umd/popper.min.js" integrity="sha384-vFJXuSJphROIrBnz7yo7oB41mKfc8JzQZiCq4NCceLEaO4IHwicKwpJf9c9IpFgh" crossorigin="anonymous"></script>

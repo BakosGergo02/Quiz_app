@@ -10,14 +10,14 @@
     <a href="{% url 'quiz:quiz_settings' quiz.id %}" class="btn btn-secondary">Mégse</a>
   </form>
   <form method="post"
-        action="{% url 'quiz:delete_question' quiz.id question.id %}"
-        style="display:inline;">
+    action="{% url 'quiz:delete_question' quiz.id question.id %}"
+    class="d-inline">
     {% csrf_token %}
-    <button type="submit"
-            class="btn btn-danger"
-            onclick="return confirm('Biztosan törlöd ezt a kérdést?');">
-      Kérdés törlése
-    </button>
+      <button type="submit"
+          class="btn-question-delete"
+          onclick="return confirm('Biztosan törlöd ezt a kérdést?');">
+        Törlés
+      </button>
   </form>
 </div>
 {% endblock %}

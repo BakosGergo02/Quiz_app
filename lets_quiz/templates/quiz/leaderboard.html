@@ -1,25 +1,71 @@
 {% extends 'base.html' %}
-{% block title %} Let's Quiz | Leaderboard {% endblock title %}
+{% block title %}Let's Quiz | Ranglista{% endblock title %}
+
 {% block content %}
-<div class="container">
-    <h1 class="text-center my-4"><span class="badge badge-info"><i class="fa fa-trophy" aria-hidden="true"></i> TOP {{ total_count }} JÁTÉKOS <i class="fa fa-trophy" aria-hidden="true"></i></span></h1>
-    <table class="table table-striped table-bordered">
-        <thead>
-            <tr>
-                <th>Pozíció</th>
-                <th>Név</th>
-                <th>Eredmény</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for quiz_profile in top_quiz_profiles %}
-            <tr>
-                <td>{{ forloop.counter }}</td>
-                <td>{{ quiz_profile.user.username }}</td>
-                <td>{{ quiz_profile.total_score }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+
+      <div class="card shadow-lg border-0 rounded-3 quiz-card">
+        <div class="card-body">
+
+          <!-- Cím -->
+          <h1 class="h3 text-center mb-4">
+            <span class="badge badge-info px-4 py-2 leaderboard-title-badge">
+              Ranglista <i class="fa fa-trophy ml-1" aria-hidden="true"></i>
+            </span>
+          </h1>
+
+          <!-- Ranglista táblázat -->
+          <div class="table-responsive">
+            <table class="table leaderboard-table mb-0">
+              <thead>
+                <tr>
+                  <th>Pozíció</th>
+                  <th>Név</th>
+                  <th>Pontszám</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for quiz_profile in top_quiz_profiles %}
+                  <tr class="
+                    {% if forloop.counter == 1 %}
+                      leaderboard-row-1
+                    {% elif forloop.counter == 2 %}
+                      leaderboard-row-2
+                    {% elif forloop.counter == 3 %}
+                      leaderboard-row-3
+                    {% endif %}
+                  ">
+                    <td>
+                      {% if forloop.counter == 1 %}
+                        🥇 1.
+                      {% elif forloop.counter == 2 %}
+                        🥈 2.
+                      {% elif forloop.counter == 3 %}
+                        🥉 3.
+                      {% else %}
+                        {{ forloop.counter }}.
+                      {% endif %}
+                    </td>
+                    <td>{{ quiz_profile.user.username }}</td>
+                    <td>{{ quiz_profile.total_score }}</td>
+                  </tr>
+                {% empty %}
+                  <tr>
+                    <td colspan="3" class="text-center text-muted py-4">
+                      Még nincs egyetlen kitöltés sem a ranglistán.
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
 </div>
 {% endblock content %}

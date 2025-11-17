@@ -1,42 +1,82 @@
 {% extends 'base.html' %}
 
-{% block content %}
-<div class="container mt-5">
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Kvízek</h2>
-    <a href="{% url 'quiz:manage_user_groups' %}" class="btn btn-outline-secondary mr-2">
-      Felhasználók & csoportok
-    </a>
-    <a href="{% url 'quiz:create_quiz' %}" class="btn btn-success">+ Új kvíz létrehozása</a>
-  </div>
+{% block title %}Let's Quiz | Kvízek kezelése{% endblock title %}
 
-  {% if quizzes %}
-    <table class="table table-striped">
-      <thead>
-        <tr>
-          <th>Cím</th>
-          <th>Létrehozta</th>
-          <th>Létrehozva</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for quiz in quizzes %}
-          <tr>
-            <td>{{ quiz.title }}</td>
-            <td>{{ quiz.created_by }}</td>
-            <td>{{ quiz.created_at }}</td>
-            <td>
-              <a href="{% url 'quiz:quiz_settings' quiz.id %}" class="btn btn-primary btn-sm">
-                Beállítások
-              </a>
-            </td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  {% else %}
-    <p>Még nincs kvíz.</p>
-  {% endif %}
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-10">
+
+      <!-- Fejléc: cím + gombok -->
+      <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+        <h2 class="mb-3 mb-md-0">Kvízek</h2>
+        <div class="d-flex flex-wrap">
+          <a href="{% url 'quiz:manage_user_groups' %}" class="btn btn-outline-secondary mr-2 mb-2">
+            Felhasználók &amp; csoportok
+          </a>
+          <a href="{% url 'quiz:create_quiz' %}" class="btn btn-success mb-2">
+            + Új kvíz létrehozása
+          </a>
+        </div>
+      </div>
+
+      {% if quizzes %}
+        <div class="card shadow-lg border-0 rounded-3 quiz-card">
+          <div class="card-body">
+
+            <div class="table-responsive">
+              <table class="table quiz-list-table mb-0">
+                <thead>
+                  <tr>
+                    <th>Cím</th>
+                    <th>Leírás</th>
+                    <th class="text-left">Kérdések</th>
+                    <th class="text-center">Létrehozva</th>
+                    <th class="text-center">Műveletek</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for quiz in quizzes %}
+                    <tr>
+                      <td>
+                        <strong>{{ quiz.title }}</strong>
+                      </td>
+                      <td class="text-muted">
+                        {% if quiz.description %}
+                          {{ quiz.description|truncatechars:80 }}
+                        {% else %}
+                          <span class="text-muted">–</span>
+                        {% endif %}
+                      </td>
+                      <td>
+                        {{ quiz.quiz_questions.count }}
+                      </td>
+                      <td>
+                        {{ quiz.created_at|date:"Y.m.d H:i" }}
+                      </td>
+                      <td class="text-right">
+                        <!-- Beállítások -->
+                        <a href="{% url 'quiz:quiz_settings' quiz.id %}" class="btn btn-sm btn-info mb-1">
+                          ⚙ Beállítások
+                        </a>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+        </div>
+      {% else %}
+        <div class="card shadow-sm border-0 rounded-3">
+          <div class="card-body text-center text-muted">
+            Még nincs kvíz létrehozva.
+          </div>
+        </div>
+      {% endif %}
+
+    </div>
+  </div>
 </div>
-{% endblock %}
+{% endblock content %}
