@@ -1,114 +1,161 @@
-# Let's Quiz
+# Online vizsgáztató rendszer szakdolgozathoz
 
 ### [letsquiz.pythonanywhere.com/](https://letsquiz.pythonanywhere.com/) [![Website letsquiz.pythonanywhere.com](https://img.shields.io/website-up-down-green-red/http/letsquiz.pythonanywhere.com.svg)](http://letsquiz.pythonanywhere.com/)
 
-This is an online quiz organizing website project, developed using Python's web framework Django.<br>
-For front-end designing I have used Twitter's front-end library Bootstrap4.
+Saját fejlesztésű online vizsgáztató rendszer, ingyenesen elérhető forráskódból.<br>
 
-[![GitHub release](https://img.shields.io/github/release/akashgiricse/lets-quiz.svg)](https://img.shields.io/bower/vpre/bootstrap.svg)
-[![GitHub issues](https://img.shields.io/github/issues/akashgiricse/lets-quiz.svg)](https://github.com/akashgiricse/lets-quiz/issues)
-[![GitHub forks](https://img.shields.io/github/forks/akashgiricse/lets-quiz.svg)](https://github.com/akashgiricse/lets-quiz/network)
-[![GitHub stars](https://img.shields.io/github/stars/akashgiricse/lets-quiz.svg)](https://github.com/akashgiricse/lets-quiz/stargazers)
 [![GitHub license](https://img.shields.io/github/license/akashgiricse/lets-quiz.svg)](https://github.com/akashgiricse/lets-quiz/blob/master/LICENSE)
 [![Open Source Love svg1](https://badges.frapsoft.com/os/v1/open-source.svg?v=103)](https://github.com/ellerbrock/open-source-badges/)
 
-## Current Features
+## Eredeti (ingyenes) forráskód – rövid összefoglalás
 
-### Site access features:
+### Az eredeti rendszer egy egyszerű, MCQ-alapú kvízalkalmazás volt:
 
-- User must be logged in to access the Quiz.
-- For signup user is required to give _username_, _first name_, _last name_, _e-mail address_ and _password_.
-- For login the user will be required to enter _username_ and _password_ only.
+- kizárólag feleletválasztós kérdések
 
-### Features of the quiz:
+- egyszerű felhasználókezelés
 
-- All questions are multiple choice question.
-- Each question is displayed only once per user.
-- Questions are displayed randomly for every user.
-- If the user by-mistake presses refresh or go back to the previous page, there will be a new question for the user and the
-  question he/she was on will be marked as attempted.
-- A message will be displayed after every attempted question whether the answer was correct or incorrect.
+- minimális admin funkciók
 
-### Leaderboard features:
+- alap ranglista
 
-- Leaderboard is a shorted list according to the score obtained by the users.
-- If two users are having same score, the user who has signed up earlier will have good ranking than the one who joined late.
-- Leaderboard is open to all. No login required.
 
-### Administrative features:
+## Jelenlegi funkciók (Current Features)
 
-- Only admin can add questions.
-- Admin can add questions and modify them until they are not marked as _Has been published?_
-- Once a question has been published, it can neither be modified nor can be accessed. Admin can only see a list of questions.
-- Admin can search questions by question text or choice text.
-- Admin can filter questions based on whether the questions have been published or not.
+### Oldal- és hozzáféréskezelés
 
-## Getting started with development
+- A kvízek kitöltéséhez bejelentkezés szükséges.
 
-Dependencies:
+- Regisztráció során a felhasználónak meg kell adnia:
 
-- Python 3.6.x
-- Django 1.11.x
-- Ubuntu 17.04 or later or Linux Mint 18.2 or later
+  - felhasználónevet
 
-### 1. Clone this repository
+  - keresztnevet
 
-```bash
-git clone https://github.com/akashgiricse/lets-quiz.git
-cd lets_quiz
-```
+  - vezetéknevet
 
-### 2. Install [Pipenv](https://pipenv.pypa.io/en/latest/)
+  - e-mail címet
 
-### 3. Create the virtualenv
+  - jelszót
 
-```bash
-## run following command from `lets_quiz` directory
-pipenv shell
-```
+- Bejelentkezéshez elegendő:
 
-### 4. Install python packages
+  - felhasználónév
 
-```bash
-pip install -r requirements.txt
-```
+  - jelszó
 
-### 5. Setup the database
+- A rendszer felhasználói csoportokat kezel (pl. Tanár, Diák).
 
-_TODO - Add instructions for this when I start using MySQL database._
+- A kvízekhez felhasználók és/vagy csoportok rendelhetők, így szabályozható, ki töltheti ki az adott kvízt.
 
-### 6. Run database migrations
+- A superuser minden kvízhez hozzáfér.
 
-```bash
-cd lets_quiz
-python manage.py migrate
-```
+### Kvíz funkciók
 
-### 7. Create superuser
+- A rendszer több kérdéstípust támogat:
 
-```bash
-python manage.py createsuperuser
-```
+  - Egyválaszos feleletválasztós kérdés (Single Choice)
 
-### 8. Run development server
+  - Többválaszos feleletválasztós kérdés (Multiple Choice)
 
-```bash
-python manage.py runserver
-```
+  - Szöveges válasz megadása
 
-## Contribute
+  - Párosító kérdés (drag & drop)
 
-- Issue Tracker: [Issues](https://github.com/akashgiricse/lets-quiz/issues)
-- Source Code: [Download zip: Release v1.0.1](https://github.com/akashgiricse/lets-quiz/archive/1.0.1.zip)
+- Egy kvízben több különböző kérdéstípus is szerepelhet.
 
-## Contributors
+- Minden kérdés:
 
-- [Akash Giri](https://github.com/akashgiricse)
+  - csak egyszer jelenik meg egy adott kvízkitöltés során
 
-## Support
+  - a kérdések sorrendje felhasználónként véletlenszerű
 
-- If you are having issues, please let me know.<gr>
-  I have a mailing list located at: contact@akashgiri.com
+- A kvízekhez:
+
+  - időkorlát állítható be (másodpercben)
+
+  - kérdésenkénti azonnali visszajelzés vagy
+
+  - csak a végén megjelenő összesített eredmény választható
+
+- A rendszer támogatja:
+
+  - részpontszámot többválaszos és párosító kérdéseknél
+
+  - kvíz újrakezdését, amely törli az adott kvíz korábbi próbálkozásait
+
+- A kitöltés végén:
+
+  - megjelenik az összpontszám
+
+  - kérdésenként részletes kiértékelés érhető el
+
+### Ranglista funkciók
+
+- A ranglista a felhasználók összesített pontszáma alapján rendezett.
+
+- Holtverseny esetén a korábban regisztrált felhasználó kerül előrébb.
+
+- A ranglista:
+
+  - nyilvánosan elérhető
+
+  - bejelentkezés nélkül is megtekinthető
+
+- A legjobb 3 helyezett kiemelt megjelenítést kap.
+
+### Adminisztrációs és tanári funkciók
+
+- Kvízt létrehozni és szerkeszteni csak tanár vagy admin jogosultsággal lehet.
+
+- Az adminisztrátor / tanár:
+
+  - új kvízt hozhat létre
+
+  - kérdéseket adhat hozzá különböző típusokban
+
+  - meglévő kérdéseket szerkeszthet vagy törölhet
+
+- A kvízekhez:
+
+  - felhasználók
+
+  - felhasználói csoportok rendelhetők hozzá
+
+- A kérdések:
+
+  - sorrendje szabályozott
+
+  - maximális pontszáma egyedileg állítható
+
+- A rendszer automatikusan értékeli a válaszokat:
+
+  - egyválaszos kérdésnél teljes pont / 0 pont
+
+  - többválaszos kérdésnél arányos pontozás
+
+  - párosító kérdésnél részpontszám
+
+- Az admin nem módosíthatja a felhasználók válaszait vagy pontszámait manuálisan.
+
+### Eredmények és visszajelzés
+
+- A felhasználó minden kvíz végén:
+
+  - összesített pontszámot kap
+
+  - részletes, kérdésenkénti kiértékelést lát
+
+- Az egyes kérdéseknél megjelenik:
+
+  - a saját válasz
+
+  - a helyes válasz
+
+  - a kapott pontszám
+
+- Az azonnali visszajelzés esetén a kvíz szünetel, majd a felhasználó manuálisan folytathatja.
+
 
 ## License
 
