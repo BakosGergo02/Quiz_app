@@ -1,7 +1,6 @@
 # Online vizsgáztató rendszer szakdolgozathoz
 
-### Ingyenesen elérhető verzió:
-### [letsquiz.pythonanywhere.com/](https://letsquiz.pythonanywhere.com/) [![Website letsquiz.pythonanywhere.com](https://img.shields.io/website-up-down-green-red/http/letsquiz.pythonanywhere.com.svg)](http://letsquiz.pythonanywhere.com/)
+### Ingyenesen elérhető verzió: [letsquiz.pythonanywhere.com/](https://letsquiz.pythonanywhere.com/) [![Website letsquiz.pythonanywhere.com](https://img.shields.io/website-up-down-green-red/http/letsquiz.pythonanywhere.com.svg)](http://letsquiz.pythonanywhere.com/)
 
 Saját fejlesztésű online vizsgáztató rendszer, ingyenesen elérhető forráskódból.<br>
 
